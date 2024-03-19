@@ -1,6 +1,7 @@
 //  A compiler from a very simple Pascal-like structured language LL(k)
 //  to 64-bit 80x86 Assembly langage
 //  Copyright (C) 2019 Pierre Jourlin
+//  Copyright (C) 2024 Elliot Pozucek 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@
 
 using namespace std;
 
-char current;				// Current car	
+char current;				//! Current char	
 
 void ReadChar(void){		// Read character and skip spaces until 
 				// non space character is read
@@ -37,12 +38,9 @@ void Error(string s){
 	exit(-1);
 }
 
-// ArithmeticExpression := Term {AdditiveOperator Term}
-// Term := Digit | "(" ArithmeticExpression ")"
-// AdditiveOperator := "+" | "-"
-// Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 
-	
+
+// AdditiveOperator := "+" | "-"	
 void AdditiveOperator(void){
 	if(current=='+'||current=='-')
 		ReadChar();
@@ -50,6 +48,8 @@ void AdditiveOperator(void){
 		Error("Opérateur additif attendu");	   // Additive operator expected
 }
 		
+
+// Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 void Digit(void){
 	if((current<'0')||(current>'9'))
 		Error("Chiffre attendu");		   // Digit expected
@@ -59,8 +59,10 @@ void Digit(void){
 	}
 }
 
+
 void ArithmeticExpression(void);			// Called by Term() and calls Term()
 
+// Term := Digit | "(" ArithmeticExpression ")"
 void Term(void){
 	if(current=='('){
 		ReadChar();
@@ -77,6 +79,8 @@ void Term(void){
 			Error("'(' ou chiffre attendu");
 }
 
+
+// ArithmeticExpression := Term {AdditiveOperator Term}
 void ArithmeticExpression(void){
 	char adop;
 	Term();
