@@ -40,3 +40,12 @@ To : 64 bit 80x86 assembly langage (AT&T)
 
 > git pull -u origin master
 
+**gdb usage**
+
+> gdb ./test
+
+> break main
+
+> run
+
+> s

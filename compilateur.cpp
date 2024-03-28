@@ -60,7 +60,59 @@ void Digit(void){
 }
 
 
+// OpRel := "<" | ">" | "=" | "!="
+char OpRel(void) {
+	if((current!='>')&&(current!='<')&&(current!='!')&&(current!='='))
+		Error("Relational operator expected");
+	char oprel = current;
+	ReadChar();
+	return oprel;
+}
+
 void ArithmeticExpression(void);			// Called by Term() and calls Term()
+
+void Exp(void) {
+	char oprel;
+	ArithmeticExpression();
+	if((current=='<')||(current=='>')||(current=='!')||(current=='=')) {
+		oprel = OpRel();
+		ArithmeticExpression();
+
+		cout << "\tpop %rax"<<endl;
+		cout << "\tpop %rbx"<<endl;
+		cout << "\tcmpq %rax, %rbx"<<endl;
+
+		switch (oprel)
+		{
+		case '<':
+			cout << "\tjb True" <<endl;
+			cout << "\tjmp False" <<endl;
+			break;
+		case '>':
+			cout << "\tja True" <<endl;
+			cout << "\tjmp False" <<endl;
+			break;
+		case '=':
+			cout << "\tje True" <<endl;
+			cout <<"\tjmp False" <<endl;
+			break;
+		case '!':
+			cout << "\tjne True" <<endl;
+			cout <<"\tjmp False" <<endl;
+			break;
+		default:
+			Error("Relational operator expected");
+			break;
+		}
+
+		cout << "False:\tPush $0\t# Faux" <<endl;
+		cout << "\tjmp EndExp" <<endl;
+		cout << "True:\tPush $-1\t# Vrai" <<endl;
+		cout << "EndExp:" <<endl;
+	}
+}
+
+
 
 // Term := Digit | "(" ArithmeticExpression ")"
 void Term(void){
@@ -75,7 +127,7 @@ void Term(void){
 	else 
 		if (current>='0' && current <='9')
 			Digit();
-	     	else
+	    else
 			Error("'(' ou chiffre attendu");
 }
 
@@ -109,7 +161,7 @@ int main(void){	// First version : Source code on standard input and assembly co
 
 	// Let's proceed to the analysis and code production
 	ReadChar();
-	ArithmeticExpression();
+	Exp();
 	ReadChar();
 	// Trailer for the gcc assembler / linker
 	cout << "\tmovq %rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;
