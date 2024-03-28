@@ -25,17 +25,27 @@
 
 using namespace std;
 
-char current;				// Current char	
+char current, lookedAhead;				// Current char, next char
+int NlookedAhead = 0;
 
+
+// ReadChar function
 void ReadChar(void) {
-	// Read character and skip spaces until non-space character is read
-	while (cin.get(current) && (current == ' ' || current == '\t' || current == '\n')) {
-		if (current == ' ') {
-			// Ignore spaces between characters
-			continue;
-		}
-		cin.get(current);
+	if(NlookedAhead > 0){
+		current = lookedAhead; 		// Char has already been read
+		NlookedAhead--;
 	}
+	else{
+        // Read character and skip spaces until 
+        // non space character is read
+        while(cin.get(current) && (current==' '||current=='\t'||current=='\n'));
+	}
+}
+
+// LookAhead function
+void LookAhead(void) {
+	while(cin.get(lookedAhead) && (lookedAhead==' '||lookedAhead=='\t'||lookedAhead=='\n'));
+	NlookedAhead++;
 }
 
 void Error(string s){
@@ -65,6 +75,7 @@ void Digit(void){
 
 
 // RelationalOperator := "<" | ">" | "=" | "!"
+// next step : add "<=" | ">=" | "and replace "!" by "<>" and "=" "=="
 char RelationalOperator(void) {
 	if((current!='>')&&(current!='<')&&(current!='!')&&(current!='='))
 		Error("Relational operator expected");
@@ -87,19 +98,41 @@ void Expression(void) {
 		cout << "\tpop %rbx"<<endl; 		// get second operand
 		cout << "\tcmpq %rax, %rbx"<<endl;		// compare both operands
 
+			char temp = current;
+			ReadChar();
 		switch (oprel)
 		{
-		case '<':
-			cout << "\tjb True" <<endl; 		// jump if below
+		case '<': // '<' | '<=' | '<>'
+			if(current=='='){
+				cout << "\tjbe True" <<endl; 		// jump if below or equal
+			} else if(current=='>'){
+				cout << "\tjne True" <<endl; 		// jump if not equal
+			} else{
+				current = temp;						// put back the character
+				cout << "\tjb True" <<endl; 		// jump if below
+			}
 			break;
-		case '>':
-			cout << "\tja True" <<endl;			// jump if above
+		case '>': // '>' | '>='
+			if(current=='='){
+				cout << "\tjae True" <<endl; 		// jump if above or equal
+			} else{
+				current = temp;						// put back the character
+				cout << "\tja True" <<endl; 		// jump if above
+			}
 			break;
-		case '=':
-			cout << "\tje True" <<endl; 		// jump if equal
+		case '=': // '=='
+		if(current=='='){
+				cout << "\tje True" <<endl; 		// jump if equal
+			} else{
+				Error("Relational operator expected");
+			}
 			break;
-		case '!':
-			cout << "\tjne True" <<endl; 		// jump if not equal
+		case '!': // '!='
+		if(current=='='){
+				cout << "\tjne True" <<endl; 		// jump if not equal
+			} else{
+				Error("Relational operator expected");
+			}
 			break;
 		default: 		// should not happen
 			Error("Relational operator expected");
