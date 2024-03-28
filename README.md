@@ -42,10 +42,22 @@ To : 64 bit 80x86 assembly langage (AT&T)
 
 **gdb usage**
 
+Run gdb on console.
 > gdb ./test
 
-> break main
+Create a break point where gdb stops (for exemple, break main makes gdb stops at the start of the assembly code). You can make break at a specific line (break 26 for line number 26) :
+> break (break_tag)
 
+Clear an existing break point :
+> clear (break_tag)
+
+Run the gdb
 > run
 
+Go to next break point :
+> continue
+> c
+
+Next step :
+> step
 > s

@@ -25,12 +25,17 @@
 
 using namespace std;
 
-char current;				//! Current char	
+char current;				// Current char	
 
-void ReadChar(void){		// Read character and skip spaces until 
-				// non space character is read
-	while(cin.get(current) && (current==' '||current=='\t'||current=='\n'))
-	   	cin.get(current);
+void ReadChar(void) {
+	// Read character and skip spaces until non-space character is read
+	while (cin.get(current) && (current == ' ' || current == '\t' || current == '\n')) {
+		if (current == ' ') {
+			// Ignore spaces between characters
+			continue;
+		}
+		cin.get(current);
+	}
 }
 
 void Error(string s){
@@ -39,79 +44,75 @@ void Error(string s){
 }
 
 
-
 // AdditiveOperator := "+" | "-"	
 void AdditiveOperator(void){
 	if(current=='+'||current=='-')
-		ReadChar();
+		ReadChar(); 	// Read next character
 	else
-		Error("Opérateur additif attendu");	   // Additive operator expected
+		Error("Additive operator expected");
 }
 		
 
 // Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 void Digit(void){
 	if((current<'0')||(current>'9'))
-		Error("Chiffre attendu");		   // Digit expected
+		Error("Digit expected");
 	else{
-		cout << "\tpush $"<<current<<endl;
+		cout << "\tpush $"<<current<<endl; 		// push digit on the stack
 		ReadChar();
 	}
 }
 
 
-// OpRel := "<" | ">" | "=" | "!="
-char OpRel(void) {
+// RelationalOperator := "<" | ">" | "=" | "!"
+char RelationalOperator(void) {
 	if((current!='>')&&(current!='<')&&(current!='!')&&(current!='='))
 		Error("Relational operator expected");
 	char oprel = current;
 	ReadChar();
-	return oprel;
+	return oprel; 		// return relational operator
 }
 
 void ArithmeticExpression(void);			// Called by Term() and calls Term()
 
-void Exp(void) {
+// Expression := ArithmeticExpression [RelationalOperator ArithmeticExpression]
+void Expression(void) {
 	char oprel;
-	ArithmeticExpression();
+	ArithmeticExpression(); 		// get first operand
 	if((current=='<')||(current=='>')||(current=='!')||(current=='=')) {
-		oprel = OpRel();
-		ArithmeticExpression();
+		oprel = RelationalOperator(); 		// get relational operator
+		ArithmeticExpression(); 		// get second operand
 
-		cout << "\tpop %rax"<<endl;
-		cout << "\tpop %rbx"<<endl;
-		cout << "\tcmpq %rax, %rbx"<<endl;
+		cout << "\tpop %rax"<<endl; 		// get first operand
+		cout << "\tpop %rbx"<<endl; 		// get second operand
+		cout << "\tcmpq %rax, %rbx"<<endl;		// compare both operands
 
 		switch (oprel)
 		{
 		case '<':
-			cout << "\tjb True" <<endl;
-			cout << "\tjmp False" <<endl;
+			cout << "\tjb True" <<endl; 		// jump if below
 			break;
 		case '>':
-			cout << "\tja True" <<endl;
-			cout << "\tjmp False" <<endl;
+			cout << "\tja True" <<endl;			// jump if above
 			break;
 		case '=':
-			cout << "\tje True" <<endl;
-			cout <<"\tjmp False" <<endl;
+			cout << "\tje True" <<endl; 		// jump if equal
 			break;
 		case '!':
-			cout << "\tjne True" <<endl;
-			cout <<"\tjmp False" <<endl;
+			cout << "\tjne True" <<endl; 		// jump if not equal
 			break;
-		default:
+		default: 		// should not happen
 			Error("Relational operator expected");
 			break;
 		}
 
-		cout << "False:\tPush $0\t# Faux" <<endl;
-		cout << "\tjmp EndExp" <<endl;
-		cout << "True:\tPush $-1\t# Vrai" <<endl;
-		cout << "EndExp:" <<endl;
+		cout << "\tjmp False" <<endl; 		// jump to False if no condition is met
+		cout << "False:\tPush $0\t# Faux" <<endl; 		// False
+		cout << "\tjmp EndExp" <<endl; 		// jump to EndExp
+		cout << "True:\tPush $-1\t# Vrai" <<endl; 		// True
+		cout << "EndExp:" <<endl; 		// EndExp
 	}
 }
-
 
 
 // Term := Digit | "(" ArithmeticExpression ")"
@@ -120,7 +121,7 @@ void Term(void){
 		ReadChar();
 		ArithmeticExpression();
 		if(current!=')')
-			Error("')' était attendu");		// ")" expected
+			Error("')' was expected");
 		else
 			ReadChar();
 	}
@@ -128,7 +129,7 @@ void Term(void){
 		if (current>='0' && current <='9')
 			Digit();
 	    else
-			Error("'(' ou chiffre attendu");
+			Error("'(' or digit expected");
 }
 
 
@@ -161,13 +162,13 @@ int main(void){	// First version : Source code on standard input and assembly co
 
 	// Let's proceed to the analysis and code production
 	ReadChar();
-	Exp();
+	Expression();
 	ReadChar();
 	// Trailer for the gcc assembler / linker
 	cout << "\tmovq %rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;
 	cout << "\tret\t\t\t# Return from main function"<<endl;
 	if(cin.get(current)){
-		cerr <<"Caractères en trop à la fin du programme : ["<<current<<"]";
+		cerr <<"Expecting end of programm : char found ["<<current<<"]";
 		Error("."); // unexpected characters at the end of program
 	}
 
