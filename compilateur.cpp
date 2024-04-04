@@ -27,7 +27,8 @@ using namespace std;
 
 char current, lookedAhead;				// Current char, next char
 int NlookedAhead = 0;
-
+// 0: '<' | 1: '>' | 2: '<=' | 3: '>=' | 4: '==' | 5: '!=' | 6: 'unknown
+int str_oprel[7] = {0,1,2,3,4,5,6}; 		// relational operators
 
 // ReadChar function
 void ReadChar(void) {
@@ -48,8 +49,8 @@ void LookAhead(void) {
 	NlookedAhead++;
 }
 
-void Error(string s){
-	cerr<< s << endl;
+void Error(string s, char current){
+	cerr<< s << current << endl;
 	exit(-1);
 }
 
@@ -59,14 +60,14 @@ void AdditiveOperator(void){
 	if(current=='+'||current=='-')
 		ReadChar(); 	// Read next character
 	else
-		Error("Additive operator expected");
+		Error("Additive operator expected", current);
 }
 		
 
 // Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 void Digit(void){
 	if((current<'0')||(current>'9'))
-		Error("Digit expected");
+		Error("Digit expected", current);
 	else{
 		cout << "\tpush $"<<current<<endl; 		// push digit on the stack
 		ReadChar();
@@ -74,21 +75,81 @@ void Digit(void){
 }
 
 
-// RelationalOperator := "<" | ">" | "=" | "!"
-// next step : add "<=" | ">=" | "and replace "!" by "<>" and "=" "=="
-char RelationalOperator(void) {
-	if((current!='>')&&(current!='<')&&(current!='!')&&(current!='='))
-		Error("Relational operator expected");
+// RelationalOperator := "<" | ">" | "<=" | ">=" | "==" | "!=" | "unknown"
+int RelationalOperator(void) {
+	if((current!='>')&&(current!='<')&&(current!='!')&&(current!='=')){
+		Error("Relational operator expected", current);
+	}
 	char oprel = current;
+	LookAhead();
+	if(lookedAhead=='='||lookedAhead=='>'){
+		/* Error(" ", lookedAhead); */
+		switch (lookedAhead)
+		{
+		case '=':
+			if (oprel=='<'){
+				ReadChar();
+				ReadChar();
+				return str_oprel[2];		// '<='
+			}
+			else if (oprel=='>'){
+				ReadChar();
+				ReadChar();
+				return str_oprel[3];		// '>='
+			}
+			else if (oprel=='='){
+				ReadChar();
+				ReadChar();
+				return str_oprel[4];		// '=='
+			}
+			else if (oprel=='!'){
+				ReadChar();
+				ReadChar();
+				return str_oprel[5];		// '!='
+			}
+			else {
+				// Should not happen
+				Error("Relational operator expected", current);
+			}
+		case '>':
+			if (oprel=='<'){
+				ReadChar();
+				ReadChar();	
+				return str_oprel[5];		// '<>'
+			}
+			else {
+				// Should not happen
+				Error("Relational operator expected", current);
+			}
+		default:
+			// Should not happen
+			Error("Relational operator expected", current);
+		}
+
+	}
+	else {
+		switch (oprel) 
+		{
+		case '<':		// '<'
+			ReadChar();
+			return str_oprel[0];
+		case '>':		// '>'
+			ReadChar();
+			return str_oprel[1];
+		default:
+			// Should not happen
+			Error("Relational operator expected", current);
+		}
+	}
 	ReadChar();
-	return oprel; 		// return relational operator
+	return str_oprel[6];		// unknown operator
 }
 
 void ArithmeticExpression(void);			// Called by Term() and calls Term()
 
 // Expression := ArithmeticExpression [RelationalOperator ArithmeticExpression]
 void Expression(void) {
-	char oprel;
+	int oprel;
 	ArithmeticExpression(); 		// get first operand
 	if((current=='<')||(current=='>')||(current=='!')||(current=='=')) {
 		oprel = RelationalOperator(); 		// get relational operator
@@ -98,45 +159,30 @@ void Expression(void) {
 		cout << "\tpop %rbx"<<endl; 		// get second operand
 		cout << "\tcmpq %rax, %rbx"<<endl;		// compare both operands
 
-			char temp = current;
-			ReadChar();
 		switch (oprel)
 		{
-		case '<': // '<' | '<=' | '<>'
-			if(current=='='){
-				cout << "\tjbe True" <<endl; 		// jump if below or equal
-			} else if(current=='>'){
-				cout << "\tjne True" <<endl; 		// jump if not equal
-			} else{
-				current = temp;						// put back the character
-				cout << "\tjb True" <<endl; 		// jump if below
-			}
+		case 0: 		// '<' 
+			cout << "\tjb True\t\t # Jump if below" <<endl; 		// jump if below
 			break;
-		case '>': // '>' | '>='
-			if(current=='='){
-				cout << "\tjae True" <<endl; 		// jump if above or equal
-			} else{
-				current = temp;						// put back the character
-				cout << "\tja True" <<endl; 		// jump if above
-			}
+		case 1: 		// '>'
+			cout << "\tja True\t\t # Jump if above" <<endl; 		// jump if above
 			break;
-		case '=': // '=='
-		if(current=='='){
-				cout << "\tje True" <<endl; 		// jump if equal
-			} else{
-				Error("Relational operator expected");
-			}
+		case 2: 		// '<='
+			cout << "\tjbe True\t # Jump if below or equal" <<endl; 		// jump if below or equal
 			break;
-		case '!': // '!='
-		if(current=='='){
-				cout << "\tjne True" <<endl; 		// jump if not equal
-			} else{
-				Error("Relational operator expected");
-			}
+		case 3: 		// '>='
+			cout << "\tjae True\t # Jump if above or equal" <<endl; 		// jump if above or equal
 			break;
+		case 4: 		// '=='
+			cout << "\tje True\t\t # Jump if equal" <<endl; 		// jump if equal
+			break;
+		case 5: 		// '!='
+			cout << "\tjne True\t # Jump if not equal" <<endl; 		// jump if not equal
+			break;
+		case 6: 		// unknown operator
+			Error("Unknown operator", current);
 		default: 		// should not happen
-			Error("Relational operator expected");
-			break;
+			Error("Relational operator expected", current);
 		}
 
 		cout << "\tjmp False" <<endl; 		// jump to False if no condition is met
@@ -154,15 +200,15 @@ void Term(void){
 		ReadChar();
 		ArithmeticExpression();
 		if(current!=')')
-			Error("')' was expected");
+			Error("')' was expected", current);
 		else
 			ReadChar();
 	}
 	else 
 		if (current>='0' && current <='9')
 			Digit();
-	    else
-			Error("'(' or digit expected");
+		else
+			Error("'(' or digit expected", current);
 }
 
 
@@ -202,7 +248,7 @@ int main(void){	// First version : Source code on standard input and assembly co
 	cout << "\tret\t\t\t# Return from main function"<<endl;
 	if(cin.get(current)){
 		cerr <<"Expecting end of programm : char found ["<<current<<"]";
-		Error("."); // unexpected characters at the end of program
+		Error(".",' '); // unexpected characters at the end of program
 	}
 
 }
