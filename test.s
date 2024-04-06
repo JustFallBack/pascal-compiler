@@ -3,37 +3,22 @@
 	.globl main	# The main function must be visible from outside
 main:			# The main function body :
 	movq %rsp, %rbp	# Save the position of the stack's top
-	push $6
-	push $2
-	pop %rbx
-	pop %rax
-	subq	%rbx, %rax
-	push %rax
-	push $4
-	pop %rbx
-	pop %rax
-	addq	%rbx, %rax
-	push %rax
+	push $8
 	push $5
-	push $3
 	pop %rbx
 	pop %rax
 	addq	%rbx, %rax
 	push %rax
-	push $1
-	pop %rbx
-	pop %rax
-	subq	%rbx, %rax
-	push %rax
+	push $9
 	push $2
 	pop %rbx
 	pop %rax
-	subq	%rbx, %rax
+	addq	%rbx, %rax
 	push %rax
 	pop %rax
 	pop %rbx
 	cmpq %rax, %rbx
-	jne True
+	ja True		 # Jump if above
 	jmp False
 False:	Push $0	# Faux
 	jmp EndExp
