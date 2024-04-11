@@ -25,6 +25,7 @@ alpha   [A-Za-z]
 digit   [0-9]
 number  {digit}+
 id	{alpha}({alpha}|{digit})*
+keyword [IF|THEN|ELSE|WHILE|DO|FOR|TO|BEGIN|END]
 addop	(\+|\-|\|\|)
 mulop	(\*|\/|%|\&\&)
 relop	(\<|\>|"=="|\<=|\>=|!=)
@@ -36,6 +37,7 @@ unknown [^\"A-Za-z0-9 \n\r\t\(\)\<\>\=\!\%\&\|\}\-\;\.]+
 {mulop}		return MULOP;
 {relop}		return RELOP;
 {number}	return NUMBER;
+{keyword}	return KEYWORD;
 {id}		return ID;
 {stringconst}	return STRINGCONST;
 "["		return RBRACKET;

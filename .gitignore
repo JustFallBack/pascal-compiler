@@ -1,4 +1,7 @@
-cpp_compilator/compilateur
-cpp_compilator/test
-cpp_compilator/test.s
+flex_compiler/tokeniser.o
+flex_compiler/tokeniser.cpp
+flex_compiler/test.s
+flex_compiler/test
+flex_compiler/compilateur
+cpp_compilator/
 .vscode

@@ -31,6 +31,7 @@ using namespace std;
 enum OPREL {EQU, DIFF, INF, SUP, INFE, SUPE, WTFR};
 enum OPADD {ADD, SUB, OR, WTFA};
 enum OPMUL {MUL, DIV, MOD, AND ,WTFM};
+enum KEYWORD2 {IF, WHILE, FOR, BEGIN, DO, THEN, ELSE, TO, WTFK};
 
 TOKEN current;				// Current token
 
@@ -54,6 +55,12 @@ void Error(string s){
 	cerr<< s << endl;
 	exit(-1);
 }
+//! Adding the following functions to the compiler
+// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
+// IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
+// WhileStatement := "WHILE" Expression "DO" Statement
+// ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
+// BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 
 // Program := [DeclarationPart] StatementPart
 // DeclarationPart := "[" Letter {"," Letter} "]"
@@ -80,8 +87,8 @@ void Identifier(void){
 }
 
 void Number(void){
-	cout <<"\tpush $"<<atoi(lexer->YYText())<<endl;
-	current=(TOKEN) lexer->yylex();
+	cout <<"\tpush $"<<atoi(lexer->YYText())<<endl;		// Get next token without changing current
+	current=(TOKEN) lexer->yylex();						// Advance to next token
 }
 
 void Expression(void);			// Called by Term() and calls Term()
@@ -299,10 +306,68 @@ void AssignementStatement(void){
 	cout << "\tpop "<<variable<<endl;
 }
 
-// Statement := AssignementStatement
-void Statement(void){
-	AssignementStatement();
+//! NEED TO ADD COUT IN .s FILE !!!!
+// IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
+void IfStatement(void) {
+	if(strcmp(lexer->YYText(),"IF")==0) {
+		current=(TOKEN) lexer->yylex();
+		Expression();
+		if(strcmp(lexer->YYText(),"THEN")==0) {
+			Statement();
+		}
+		else {
+			Error("'THEN' keyword expected");
+		}
+	}
+	else {
+		Error("'IF' keyword expected");
+	}
+
+	
 }
+
+// WhileStatement := "WHILE" Expression "DO" Statement
+void WhileStatement(void) {
+
+}
+
+// ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
+void ForStatement(void) {
+
+}
+
+// BlockStatement := "BEGIN" Statement { ";" Statement } "END"
+void BlockStatement(void) {
+
+}
+
+// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
+void Statement(void){
+	if(current==ID) {
+		AssignementStatement();
+	}
+	else if(current==KEYWORD) {
+		if(strcmp(lexer->YYText(),"IF")==0) {
+			IfStatement();
+		}
+		else if(strcmp(lexer->YYText(); "WHILE")==0) {
+			WhileStatement();
+		}
+		else if(strcmp(lexer->YYText(),"FOR")==0) {
+			ForStatement();
+		}
+		else if(strcmp(lexer->YYText(),"BEGIN")==0) {
+			BlockStatement();
+		}
+		else {
+			Error("keyword not identified (must be IF or WHILE or FOR or BEGIN)");
+		}
+	}
+	else {
+		Error("keyword or identifier expected");
+	}
+}
+
 
 // StatementPart := Statement {";" Statement} "."
 void StatementPart(void){
