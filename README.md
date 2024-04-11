@@ -30,24 +30,24 @@ Run gdb on console :
 
 **gdb usage**
 
-Create a break point where gdb stops at specified label (for exemple, `break main` makes gdb stops at the start of the assembly code).
+Create a break point where gdb stops at specified label (for exemple, `break main` makes gdb stops at the start of the assembly code).<br>
 You can make break point at a specific line (`break 26` to make gdb stops at 26th line) :
->(gdb) break label
+>(gdb) break label<br>
 >(gdb) break line
 
 Clear specified break point :
->(gdb) break label
+>(gdb) break label<br>
 >(gdb) break line
 
 Run the debug :
 >(gdb) run
 
 Next step :
->(gdb) step
+>(gdb) step<br>
 >(gdb) s
 
 Continue to next break point :
->(gdb) continue
+>(gdb) continue<br>
 >(gdb) c
 
 
