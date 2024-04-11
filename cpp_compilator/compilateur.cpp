@@ -16,8 +16,19 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Build with "make compilateur"
 
+// Grammar :
+
+// Number := Digit{Digit}
+// Letter := "a"|...|"z"
+// AdditiveOperator := "+" | "-" | "||"
+// MultiplicativeOperator := "*" | "/" | "%" | "&&"
+// RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
+
+// Expression := ArithmeticExpression [RelationalOperator ArithmeticExpression]
+// ArithmeticExpression := Term {AdditiveOperator Term}
+// Term := Factor {MultiplicativeOperator Factor}
+// Factor := Number | Letter | "(" Expression ")"| "!" Factor
 
 #include <string>
 #include <iostream>
@@ -25,20 +36,22 @@
 
 using namespace std;
 
-char current, lookedAhead;				// Current char, next char
+// relational operators
+// 0: '<' | 1: '>' | 2: '<=' | 3: '>=' | 4: '==' | 5: '!=' | 6: 'unknown'
+int str_oprel[7] = {0,1,2,3,4,5,6};
+// Current char, next char
+char current, lookedAhead;				
 int NlookedAhead = 0;
-// 0: '<' | 1: '>' | 2: '<=' | 3: '>=' | 4: '==' | 5: '!=' | 6: 'unknown
-int str_oprel[7] = {0,1,2,3,4,5,6}; 		// relational operators
 
 // ReadChar function
 void ReadChar(void) {
+	// Char has already been read
 	if(NlookedAhead > 0){
-		current = lookedAhead; 		// Char has already been read
+		current = lookedAhead; 			
 		NlookedAhead--;
 	}
 	else{
-        // Read character and skip spaces until 
-        // non space character is read
+        // Read character and skip spaces until non space character is read
         while(cin.get(current) && (current==' '||current=='\t'||current=='\n'));
 	}
 }
@@ -49,28 +62,80 @@ void LookAhead(void) {
 	NlookedAhead++;
 }
 
+
+// Error function
 void Error(string s, char current){
 	cerr<< s << current << endl;
 	exit(-1);
 }
 
 
-// AdditiveOperator := "+" | "-"	
-void AdditiveOperator(void){
-	if(current=='+'||current=='-')
-		ReadChar(); 	// Read next character
-	else
-		Error("Additive operator expected", current);
-}
-		
-
-// Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
-void Digit(void){
-	if((current<'0')||(current>'9'))
-		Error("Digit expected", current);
+// Letter := "a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|"l"|"m"|"n"|"o"|"p"|"q"|"r"|"s"|"t"|"u"|"v"|"w"|"x"|"y"|"z"
+void Letter(void) {
+	if((current<'a')||(current>'z'))
+		Error("Letter expected", current);
 	else{
-		cout << "\tpush $"<<current<<endl; 		// push digit on the stack
+		cout << "\tpush "<<current<<endl; 		// push letter on the stack
 		ReadChar();
+	}
+}
+
+
+// Number := Digit {Digit}
+void Number(void) {
+	unsigned long long number;
+	if((current<'0')||(current>'9'))
+		Error("Number expected", current);
+	else{
+		number = current - '0';
+	}
+	ReadChar();
+	while((current>='0')&&(current<='9')){
+		number = number*10 + current - '0';
+		ReadChar();
+	}
+	cout << "\tpush $"<<number<<endl;		// push number on the stack
+}
+
+
+// MultiplicativeOperator := "*" | "/" | "%" | "&&"
+void MultiplicativeOperator(void) {
+	if(current!='*'&&current!='/'&&current!='%'&&current!='&') {
+		Error("Multiplicative operator expected", current);
+	}
+	else if(current!='&') {
+		ReadChar();
+	}
+	else {
+		LookAhead();
+		if(lookedAhead!='&') {
+			Error("Multiplicative operator expected", current);
+		}
+		else {
+			ReadChar();
+			ReadChar();
+		}
+	}
+}
+
+
+// AdditiveOperator := "+" | "-" | "||"
+void AdditiveOperator(void){
+	if(current!='+'&&current!='-'&&current!='|') {
+		Error("Additive operator expected", current);
+	}
+	else if(current!='|') {
+		ReadChar();
+	}
+	else {
+		LookAhead();
+		if(lookedAhead!='|') {
+			Error("Comparison with '||'", current);
+		}
+		else {
+			ReadChar();
+			ReadChar();
+		}
 	}
 }
 
@@ -145,6 +210,7 @@ int RelationalOperator(void) {
 	return str_oprel[6];		// unknown operator
 }
 
+
 void ArithmeticExpression(void);			// Called by Term() and calls Term()
 
 // Expression := ArithmeticExpression [RelationalOperator ArithmeticExpression]
@@ -194,21 +260,65 @@ void Expression(void) {
 }
 
 
-// Term := Digit | "(" ArithmeticExpression ")"
-void Term(void){
+// Factor := Number | "(" Expression ")"
+void Factor(void) {
 	if(current=='('){
 		ReadChar();
-		ArithmeticExpression();
+		Expression();
 		if(current!=')')
 			Error("')' was expected", current);
 		else
 			ReadChar();
 	}
-	else 
-		if (current>='0' && current <='9')
-			Digit();
-		else
-			Error("'(' or digit expected", current);
+	else {
+		if (current>='0' && current <='9') {
+			Number();
+		}
+		else {
+			if(current>='a'&& current<='z') {
+				Letter();
+			}
+			else {
+				Error("'(' or number ou letter expected", current);
+			}
+		}
+	}
+}
+
+
+// Term := Factor {MultiplicativeOperator Factor}
+void Term(void) {
+	char mulop;
+	Factor();
+	while(current=='*'||current=='/'||current=='%'||current=='&') {
+		mulop=current;		// Save operator in local variable
+		MultiplicativeOperator();
+		Factor();
+
+		cout << "\tpop %rbx"<<endl;	// get first operand
+		cout << "\tpop %rax"<<endl;	// get second operand
+
+		switch (mulop)
+		{
+		case '*':		// '*'
+		case '&':		// '&&'
+			cout << "\timulq	%rbx, %rax"<<endl;	// %rax * %rbx -> %rdx:%rax
+			cout << "\tpush %rax"<<endl;		// store result
+			break;
+		case '/':		// '/'
+			cout << "\tmovq $0, %rdx"<<endl;	// clear %rdx (high part of numerator)
+			cout << "\tdivq	%rbx"<<endl;		// %rdx:%rax / %rbx -> %rax (quotient goes in %rax)
+			cout << "\tpush %rax"<<endl;		// store result
+			break;
+		case '%':		// '%
+			cout << "\tmovq $0, %rdx"<<endl;	// clear %rdx (high part of numerator)
+			cout << "\tdivq	%rbx"<<endl;		// %rdx:%rax / %rbx -> %rdx (remainder goes in %rdx)
+			cout << "\tpush %rdx"<<endl;		// store result
+			break;
+		default:
+			Error("Multiplicative operator expected", current);
+		}
+	}
 }
 
 
@@ -216,22 +326,24 @@ void Term(void){
 void ArithmeticExpression(void){
 	char adop;
 	Term();
-	while(current=='+'||current=='-'){
+	while(current=='+'||current=='-'||current=='|') {
 		adop=current;		// Save operator in local variable
 		AdditiveOperator();
 		Term();
+
 		cout << "\tpop %rbx"<<endl;	// get first operand
 		cout << "\tpop %rax"<<endl;	// get second operand
-		if(adop=='+')
-			cout << "\taddq	%rbx, %rax"<<endl;	// add both operands
+
+		if(adop=='+'||adop=='|')
+			cout << "\taddq	%rbx, %rax"<<endl;	//  %rax + %rbx -> %rax
 		else
-			cout << "\tsubq	%rbx, %rax"<<endl;	// substract both operands
+			cout << "\tsubq	%rbx, %rax"<<endl;	// %rax - %rbx -> %rax
 		cout << "\tpush %rax"<<endl;			// store result
 	}
-
 }
 
-int main(void){	// First version : Source code on standard input and assembly code on standard output
+
+int main(void) {
 	// Header for gcc assembler / linker
 	cout << "\t\t\t# This code was produced by the CERI Compiler"<<endl;
 	cout << "\t.text\t\t# The following lines contain the program"<<endl;

@@ -4,21 +4,26 @@
 main:			# The main function body :
 	movq %rsp, %rbp	# Save the position of the stack's top
 	push $8
-	push $5
+	push $55
 	pop %rbx
 	pop %rax
 	addq	%rbx, %rax
 	push %rax
-	push $9
-	push $2
+	push $105
+	push $6
+	push $7
 	pop %rbx
 	pop %rax
-	addq	%rbx, %rax
+	imulq	%rbx, %rax
+	push %rax
+	pop %rbx
+	pop %rax
+	subq	%rbx, %rax
 	push %rax
 	pop %rax
 	pop %rbx
 	cmpq %rax, %rbx
-	ja True		 # Jump if above
+	je True		 # Jump if equal
 	jmp False
 False:	Push $0	# Faux
 	jmp EndExp

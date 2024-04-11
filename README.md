@@ -4,6 +4,55 @@ A simple compiler.
 From : Pascal-like imperative LL(k) langage
 To : 64 bit 80x86 assembly langage (AT&T)
 
+## This version can handle :
+
+- Number := Digit{Digit}
+- Letter := "a"|...|"z"
+- AdditiveOperator := "+" | "-" | "||"
+- MultiplicativeOperator := "*" | "/" | "%" | "&&"
+- RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
+
+- Expression := ArithmeticExpression [RelationalOperator ArithmeticExpression]
+- ArithmeticExpression := Term {AdditiveOperator Term}
+- Term := Factor {MultiplicativeOperator Factor}
+- Factor := Number | Letter | "(" Expression ")"| "!" Factor
+
+## How to use 
+
+**Build the compiler with debug symbol :**
+
+> bash ./compil.sh
+
+**Debug the executable :**
+
+Run gdb on console :
+> gdb ./test
+
+**gdb usage**
+
+Create a break point where gdb stops at specified label (for exemple, `break main` makes gdb stops at the start of the assembly code).
+You can make break point at a specific line (`break 26` to make gdb stops at 26th line) :
+>(gdb) break label
+>(gdb) break line
+
+Clear specified break point :
+>(gdb) break label
+>(gdb) break line
+
+Run the debug :
+>(gdb) run
+
+Next step :
+>(gdb) step
+>(gdb) s
+
+Continue to next break point :
+>(gdb) continue
+>(gdb) c
+
+
+## Not up to date (don't read)
+
 **Download the repository :**
 
 > git clone git@framagit.org:jourlin/cericompiler.git
