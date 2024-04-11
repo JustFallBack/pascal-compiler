@@ -350,7 +350,7 @@ void Statement(void){
 		if(strcmp(lexer->YYText(),"IF")==0) {
 			IfStatement();
 		}
-		else if(strcmp(lexer->YYText(); "WHILE")==0) {
+		else if(strcmp(lexer->YYText(), "WHILE")==0) {
 			WhileStatement();
 		}
 		else if(strcmp(lexer->YYText(),"FOR")==0) {
