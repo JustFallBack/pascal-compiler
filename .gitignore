@@ -3,6 +3,7 @@ flex_compiler/tokeniser.cpp
 flex_compiler/test.s
 flex_compiler/test
 flex_compiler/compilateur
-flex_compiler/test_1.p
+flex_compiler/prog.s
+flex_compiler/prog
 cpp_compilator/
 .vscode

@@ -1,3 +1,13 @@
 [a,b,i,c]
-a:=0;
-WHILE a != 4 DO a:=a+1.
+
+a:=3;
+FOR i:=1 TO 3 DO 
+    BEGIN 
+        IF a==1 THEN
+            b:=b+1
+        ELSE 
+        BEGIN
+            b:=b+2;
+            c:=c+1
+        END
+    END.

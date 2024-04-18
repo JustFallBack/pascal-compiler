@@ -51,7 +51,7 @@ bool IsDeclared(const char *id){
 
 
 void Error(string s){
-	cerr << "Line n°"<<lexer->lineno()<<", read : '"<<lexer->YYText()<<"'("<<current<<"), bur ";
+	cerr << "Line n°"<<lexer->lineno()<<", read : '"<<lexer->YYText()<<"'("<<current<<"), but ";
 	cerr<< s << endl;
 	exit(-1);
 }
@@ -310,7 +310,7 @@ string AssignementStatement(void){
 void Statement(void);	
 
 // check if specified keyword is expected and read keyword
-void IsKeyWord(char *keyword) {
+void IsKeyWord(const char *keyword) {
 	if(current!=KEYWORD) {
 		Error("keyword expected");
 	}
@@ -324,117 +324,84 @@ void IsKeyWord(char *keyword) {
 
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 void IfStatement(void) {
-	if(strcmp(lexer->YYText(),"IF")==0) {
-		unsigned long localTag=++TagNumber;
-		current=(TOKEN) lexer->yylex();
-		cout << "IF"<<localTag<<":"<<endl; // label for if
-		Expression();
-		cout<<"\tpop %rax"<<endl;
-		cout<<"\tcmpq $0, %rax"<<endl;
-		cout<<"\tje IFfalse"<<localTag<<endl;
-		cout<<"IFtrue"<<localTag<<":"<<endl; // label for then
+	unsigned long localTag=++TagNumber;
 
-		if(strcmp(lexer->YYText(),"THEN")==0) {
-			current=(TOKEN) lexer->yylex();
-			Statement();
-			cout<<"\tjmp IFend"<<localTag<<endl;
-			cout<<"IFfalse"<<localTag<<":"<<endl; // label for else (even if there is no else)
-			if(strcmp(lexer->YYText(),"ELSE")==0) {
-				current=(TOKEN) lexer->yylex();
-				Statement();
-			}
-			cout<<"IFend"<<localTag<<":"<<endl; // label for end of if
-		}
-		else {
-			Error("'THEN' keyword expected");
-		}
-	}
-	else {
-		Error("'IF' keyword expected");
-	}
+	IsKeyWord("IF");
+	cout<<"IF"<<localTag<<":"<<endl; // label for IF
+	Expression();
+	cout<<"\tpop %rax"<<endl;
+	cout<<"\tcmpq $0, %rax"<<endl;
+	cout<<"\tje IFfalse"<<localTag<<"\t\t# jump if 'IF' statement is false (jump to 'ELSE' if there is one)"<<endl;
+
+	IsKeyWord("THEN");
+	cout<<"IFtrue"<<localTag<<":\t\t\t# THEN"<<endl; // label for THEN
+	Statement();
+	cout<<"\tjmp IFend"<<localTag<<"\t\t# if 'IF' statement has been executed, jump to the end (avoid else)"<<endl;
+	cout<<"IFfalse"<<localTag<<":\t\t\t# ELSE"<<endl; // label for ELSE (even if there is no else)
+
+	IsKeyWord("ELSE");
+	Statement();
+	cout<<"IFend"<<localTag<<":"<<endl; // label for end of 'IF' statement
 }
 
 // WhileStatement := "WHILE" Expression "DO" Statement
 void WhileStatement(void) {
-	if(strcmp(lexer->YYText(),"WHILE")==0) {
-		unsigned long localTag=++TagNumber;
-		cout<<"WHILE"<<localTag<<":"<<endl; // label for while
-		current=(TOKEN) lexer->yylex();
-		Expression();
-		cout<<"\tpop %rax"<<endl;
-		cout<<"\tcmpq $0, %rax"<<endl;
-		cout<<"\tje WHILEend"<<localTag<<endl;
-		if(strcmp(lexer->YYText(),"DO")==0) {
-			current=(TOKEN) lexer->yylex();
-			cout<<"WHILEtrue"<<localTag<<":"<<endl; // label for do
-			Statement();
-			cout<<"\tjmp WHILE"<<localTag<<endl;
-			cout<<"WHILEend"<<localTag<<":"<<endl; // label for end of while
-		}
-		else {
-			Error("'DO' keyword expected");
-		}
-	}
-	else {
-		Error("'WHILE' keyword expected");
-	}
+	unsigned long localTag=++TagNumber;
+
+	IsKeyWord("WHILE");
+	cout<<"WHILE"<<localTag<<":"<<endl; // label for WHILE
+	Expression();
+	cout<<"\tpop %rax"<<endl;
+	cout<<"\tcmpq $0, %rax"<<endl;
+	cout<<"\tje WHILEend"<<localTag<<"\t\t# if 'WHILE' expression is false, jump to the end"<<endl;
+
+	IsKeyWord("DO");
+	cout<<"WHILEtrue"<<localTag<<":\t\t\t# DO"<<endl; // label for DO
+	Statement();
+	cout<<"\tjmp WHILE"<<localTag<<endl;
+	cout<<"WHILEend"<<localTag<<":"<<endl; // label for end of 'WHILE' statement
+
 }
 
 // ForStatement := "FOR" AssignementStatement "TO" Expression "DO" Statement
 void ForStatement(void) {
-	if(strcmp(lexer->YYText(),"FOR")==0) {
-		unsigned long localTag=++TagNumber;
-		current=(TOKEN) lexer->yylex();
-		string loop_var = AssignementStatement();
-		if(strcmp(lexer->YYText(),"TO")==0) {
-			current=(TOKEN) lexer->yylex();
-			Expression();
-			cout<<"FOR"<<localTag<<":"; // label for FOR
-			cout<<"\tmovq (%rsp), %rax"<<endl; // necessary to avoid 'too many memory references'
-			cout<<"\tcmpq %rax, "<<loop_var<<endl;
-			cout<<"\tjae FORend"<<localTag<<endl;
-			if(strcmp(lexer->YYText(),"DO")==0) {
-				current=(TOKEN) lexer->yylex();
-				Statement();
-				cout<<"\tincq "<<loop_var<<endl;
-				cout<<"\tjmp FOR"<<localTag<<endl;
-				cout<<"FORend"<<localTag<<":"<<endl; // label for end of FOR
-			}
-			else {
-				Error("'DO' keyword expected");
-			}
+	unsigned long localTag=++TagNumber;
 
-		}
-		else {
-			Error("'TO' keyword expected");
-		}
-	}
-	else {
-		Error("'FOR' keyword expected");
-	}
+	cout<<"FOR"<<localTag<<":"; // label for FOR
+	IsKeyWord("FOR");
 
+	string loop_var = AssignementStatement();
+
+
+	IsKeyWord("TO");
+	Expression();
+	cout<<"TO"<<localTag<<":"; // label for TO
+	cout<<"\tmovq (%rsp), %rax"<<endl; // necessary to avoid 'too many memory references'
+	cout<<"\tcmpq %rax, "<<loop_var<<endl;
+	cout<<"\tjae FORend"<<localTag<<"\t\t# jump at end of 'FOR' statement if loop_var is above or equal expression"<<endl;
+
+	IsKeyWord("DO");
+	Statement();
+	cout<<"\tincq "<<loop_var<<"\t\t# loop_var++"<<endl;
+	cout<<"\tjmp TO"<<localTag<<endl;
+	cout<<"FORend"<<localTag<<":"<<endl; // label for end of 'FOR' statement
 }
+
 
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 void BlockStatement(void) {
-	if(strcmp(lexer->YYText(),"BEGIN")==0) {
-		unsigned long localTag=++TagNumber;
-		cout<<"BEGIN"<<localTag<<":"<<endl; // label for begin
+	unsigned long localTag=++TagNumber;
+
+	IsKeyWord("BEGIN");
+	cout<<"BEGIN"<<localTag<<":"<<endl; // label for BEGIN
+	Statement();
+	while(current==SEMICOLON) {
 		current=(TOKEN) lexer->yylex();
 		Statement();
-		while(current==SEMICOLON) {
-			current=(TOKEN) lexer->yylex();
-			Statement();
-		}
-		if(strcmp(lexer->YYText(),"END")!=0) {
-			Error("'END' keyword expected");
-		}
-		cout<<"END"<<localTag<<":"<<endl; // label for end
-		current=(TOKEN) lexer->yylex();
 	}
-	else {
-		Error("'BEGIN keyword expected");
-	}
+
+	IsKeyWord("END");
+	cout<<"END"<<localTag<<":"<<endl; // label for END
 }
 
 // Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
