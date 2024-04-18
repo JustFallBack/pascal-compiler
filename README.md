@@ -42,14 +42,14 @@ To : 64 bit 80x86 assembly langage (AT&T)
 - IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 - WhileStatement := "WHILE" Expression "DO" Statement
 - ForStatement := "FOR" AssignementStatement "TO" Expression "DO" Statement
-- BlockStatement := "BEGIN" Statement { ";" Statement } "END"
+- BlockStatement := "BEGIN" Statement { ";" Statement } "END"<br>
 
 - Expression := SimpleExpression [RelationalOperator SimpleExpression]
 - SimpleExpression := Term {AdditiveOperator Term}
 - Term := Factor {MultiplicativeOperator Factor}
 - Factor := Number | Letter | "(" Expression ")"| "!" Factor
 - Number := Digit{Digit}
-- Identifier := Letter {(Letter|Digit)}
+- Identifier := Letter {(Letter|Digit)}<br>
 
 - AdditiveOperator := "+" | "-" | "||"
 - MultiplicativeOperator := "*" | "/" | "%" | "&&"
