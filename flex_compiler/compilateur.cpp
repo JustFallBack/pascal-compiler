@@ -51,7 +51,7 @@ bool IsDeclared(const char *id){
 
 
 void Error(string s){
-	cerr << "Ligne n°"<<lexer->lineno()<<", lu : '"<<lexer->YYText()<<"'("<<current<<"), mais ";
+	cerr << "Line n°"<<lexer->lineno()<<", read : '"<<lexer->YYText()<<"'("<<current<<"), bur ";
 	cerr<< s << endl;
 	exit(-1);
 }
@@ -289,7 +289,7 @@ void Expression(void){
 }
 
 // AssignementStatement := Identifier ":=" Expression
-void AssignementStatement(void){
+string AssignementStatement(void){
 	string variable;
 	if(current!=ID)
 		Error("Identificateur attendu");
@@ -304,14 +304,28 @@ void AssignementStatement(void){
 	current=(TOKEN) lexer->yylex();
 	Expression();
 	cout << "\tpop "<<variable<<endl;
+	return variable;
 }
 
 void Statement(void);	
 
+// check if specified keyword is expected and read keyword
+void IsKeyWord(char *keyword) {
+	if(current!=KEYWORD) {
+		Error("keyword expected");
+	}
+	if(strcmp(lexer->YYText(),keyword)!=0) {
+		string err(keyword);
+		string err_msg = "'"+err+"' keyword expected";
+		Error(err_msg);
+	}
+	current=(TOKEN) lexer->yylex();
+}
+
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 void IfStatement(void) {
 	if(strcmp(lexer->YYText(),"IF")==0) {
-		int localTag=++TagNumber;
+		unsigned long localTag=++TagNumber;
 		current=(TOKEN) lexer->yylex();
 		cout << "IF"<<localTag<<":"<<endl; // label for if
 		Expression();
@@ -343,7 +357,7 @@ void IfStatement(void) {
 // WhileStatement := "WHILE" Expression "DO" Statement
 void WhileStatement(void) {
 	if(strcmp(lexer->YYText(),"WHILE")==0) {
-		int localTag=++TagNumber;
+		unsigned long localTag=++TagNumber;
 		cout<<"WHILE"<<localTag<<":"<<endl; // label for while
 		current=(TOKEN) lexer->yylex();
 		Expression();
@@ -366,12 +380,37 @@ void WhileStatement(void) {
 	}
 }
 
-// ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
+// ForStatement := "FOR" AssignementStatement "TO" Expression "DO" Statement
 void ForStatement(void) {
 	if(strcmp(lexer->YYText(),"FOR")==0) {
-		int localTag=++TagNumber;
-		cout<<"FOR"<<localTag<<":"; // label for FOR
-		
+		unsigned long localTag=++TagNumber;
+		current=(TOKEN) lexer->yylex();
+		string loop_var = AssignementStatement();
+		if(strcmp(lexer->YYText(),"TO")==0) {
+			current=(TOKEN) lexer->yylex();
+			Expression();
+			cout<<"FOR"<<localTag<<":"; // label for FOR
+			cout<<"\tmovq (%rsp), %rax"<<endl; // necessary to avoid 'too many memory references'
+			cout<<"\tcmpq %rax, "<<loop_var<<endl;
+			cout<<"\tjae FORend"<<localTag<<endl;
+			if(strcmp(lexer->YYText(),"DO")==0) {
+				current=(TOKEN) lexer->yylex();
+				Statement();
+				cout<<"\tincq "<<loop_var<<endl;
+				cout<<"\tjmp FOR"<<localTag<<endl;
+				cout<<"FORend"<<localTag<<":"<<endl; // label for end of FOR
+			}
+			else {
+				Error("'DO' keyword expected");
+			}
+
+		}
+		else {
+			Error("'TO' keyword expected");
+		}
+	}
+	else {
+		Error("'FOR' keyword expected");
 	}
 
 }
@@ -379,7 +418,7 @@ void ForStatement(void) {
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 void BlockStatement(void) {
 	if(strcmp(lexer->YYText(),"BEGIN")==0) {
-		int localTag=++TagNumber;
+		unsigned long localTag=++TagNumber;
 		cout<<"BEGIN"<<localTag<<":"<<endl; // label for begin
 		current=(TOKEN) lexer->yylex();
 		Statement();
