@@ -6,19 +6,19 @@ To : 64 bit 80x86 assembly langage (AT&T)
 
 **Download the repository :**
 
-> git clone git@framagit.org:jourlin/cericompiler.git
+> git clone git@github.com:JustFallBack/Compilateur.git
 
 **Build the compiler and test it :**
 
-> make test
+> make prog
 
 **Have a look at the output :**
 
-> gedit test.s
+> gedit prog.s
 
 **Debug the executable :**
 
-> ddd ./test
+> ddd ./prog
 
 **Commit the new version :**
 
@@ -42,14 +42,14 @@ To : 64 bit 80x86 assembly langage (AT&T)
 - IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 - WhileStatement := "WHILE" Expression "DO" Statement
 - ForStatement := "FOR" AssignementStatement "TO" Expression "DO" Statement
-- BlockStatement := "BEGIN" Statement { ";" Statement } "END"<br>
+- BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 
 - Expression := SimpleExpression [RelationalOperator SimpleExpression]
 - SimpleExpression := Term {AdditiveOperator Term}
 - Term := Factor {MultiplicativeOperator Factor}
 - Factor := Number | Letter | "(" Expression ")"| "!" Factor
 - Number := Digit{Digit}
-- Identifier := Letter {(Letter|Digit)}<br>
+- Identifier := Letter {(Letter|Digit)}
 
 - AdditiveOperator := "+" | "-" | "||"
 - MultiplicativeOperator := "*" | "/" | "%" | "&&"
