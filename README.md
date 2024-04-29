@@ -71,3 +71,4 @@ Continue to next break point :
 -  Letter := "a"|...|"z"
 -  <span style="color: red;">Type := "INTEGER" | "BOOLEAN"</span>
 
+<span style="color: red;">Type := "INTEGER" | "BOOLEAN"</span>
