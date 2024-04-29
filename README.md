@@ -10,9 +10,11 @@ To : 64 bit 80x86 assembly langage (AT&T)
 
 ## Build the compiler and test it :
 You can test different file that are in `pascal_test` folder.<br>
-For exemple :<br>
-> make VERSION=All<br>
-will compile the program using `test<span style="color: red;">All</span>.p` file.
+For exemple :
+
+> make VERSION=All
+
+will compile the program using `testAll.p` file.
 
 **Have a look at the output :**
 
