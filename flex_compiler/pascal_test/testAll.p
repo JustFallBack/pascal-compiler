@@ -1,4 +1,4 @@
-[a,b,c,d,i,j,k]
+[INTEGER a, INTEGER b, INTEGER c, INTEGER d, INTEGER i, INTEGER j, INTEGER k]
 
 BEGIN
   a := 3;

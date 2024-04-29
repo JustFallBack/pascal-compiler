@@ -1,4 +1,4 @@
-[a,b,i,c]
+[INTEGER a, INTEGER b, INTEGER i, INTEGER c]
 
 a:=3;
 FOR i:=1 TO 3 DO 
@@ -7,7 +7,7 @@ FOR i:=1 TO 3 DO
             b:=b+1
         ELSE 
         BEGIN
-            b:=b+2;
+            b:=b*2;
             c:=c+1
         END
     END.

@@ -22,6 +22,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <set>
+#include <map>
 #include <FlexLexer.h>
 #include "tokeniser.h"
 #include <cstring>
@@ -32,6 +33,7 @@ enum OPREL {EQU, DIFF, INF, SUP, INFE, SUPE, WTFR};
 enum OPADD {ADD, SUB, OR, WTFA};
 enum OPMUL {MUL, DIV, MOD, AND ,WTFM};
 enum KEYWORD2 {IF, WHILE, FOR, BEGIN, DO, THEN, ELSE, TO, WTFK};
+enum TYPES {INTEGER, BOOLEAN, WTFT};
 
 TOKEN current;				// Current token
 
@@ -42,7 +44,7 @@ FlexLexer* lexer = new yyFlexLexer; // This is the flex tokeniser
 // and lexer->YYText() returns the lexicon entry as a string
 
 	
-set<string> DeclaredVariables;
+map<string, TYPES> DeclaredVariables;
 unsigned long TagNumber=0;
 
 bool IsDeclared(const char *id){
@@ -51,11 +53,12 @@ bool IsDeclared(const char *id){
 
 
 void Error(string s){
+	// current = token index
 	cerr << "Line n°"<<lexer->lineno()<<", read : '"<<lexer->YYText()<<"'("<<current<<"), but ";
 	cerr<< s << endl;
 	exit(-1);
 }
-//! Adding the following functions to the compiler
+
 // Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 // WhileStatement := "WHILE" Expression "DO" Statement
@@ -63,7 +66,7 @@ void Error(string s){
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 
 // Program := [DeclarationPart] StatementPart
-// DeclarationPart := "[" Letter {"," Letter} "]"
+// DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
 // StatementPart := Statement {";" Statement} "."
 // Statement := AssignementStatement
 // AssignementStatement := Letter "=" Expression
@@ -71,7 +74,8 @@ void Error(string s){
 // Expression := SimpleExpression [RelationalOperator SimpleExpression]
 // SimpleExpression := Term {AdditiveOperator Term}
 // Term := Factor {MultiplicativeOperator Factor}
-// Factor := Number | Letter | "(" Expression ")"| "!" Factor
+// Factor := Number | Identifier | "(" Expression ")"
+// Identifier := Letter{Letter|Digit}
 // Number := Digit{Digit}
 
 // AdditiveOperator := "+" | "-" | "||"
@@ -79,37 +83,51 @@ void Error(string s){
 // RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 // Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 // Letter := "a"|...|"z"
+// Type := "INTEGER" | "BOOLEAN"
 	
-		
-void Identifier(void){
+// Identifier := Letter{Letter|Digit}
+enum TYPES Identifier(void){
 	cout << "\tpush "<<lexer->YYText()<<endl;
 	current=(TOKEN) lexer->yylex();
+	return INTEGER;
 }
 
-void Number(void){
+// Number := Digit{Digit}
+enum TYPES Number(void){
 	cout <<"\tpush $"<<atoi(lexer->YYText())<<endl;		// Get next token without changing current
 	current=(TOKEN) lexer->yylex();						// Advance to next token
+	return INTEGER;
 }
 
-void Expression(void);			// Called by Term() and calls Term()
+enum TYPES Expression(void);			// Called by Term() and calls Term()
 
-void Factor(void){
+// Factor := Number | Identifier | "(" Expression ")"
+enum TYPES Factor(void){
+	TYPES type;											// Type of the factor
 	if(current==RPARENT){
-		current=(TOKEN) lexer->yylex();
-		Expression();
-		if(current!=LPARENT)
-			Error("')' était attendu");		// ")" expected
-		else
-			current=(TOKEN) lexer->yylex();
+		current=(TOKEN) lexer->yylex();					// consume '(' and advance to next token
+		type = Expression();							// get expression and its type
+		if(current!=LPARENT) {							// triggers an error if token is not ')'
+			Error("')' expected");
+		}
+		else {
+			current=(TOKEN) lexer->yylex();				// consume ')' and advance to next token
+		}
 	}
-	else 
-		if (current==NUMBER)
-			Number();
-	     	else
-				if(current==ID)
-					Identifier();
-				else
-					Error("'(' ou chiffre ou lettre attendue");
+	else {
+		if (current==NUMBER) {
+			type = Number();
+		}
+		else {
+			if(current==ID) {
+				type = Identifier();
+			}
+			else {
+				Error("'(' or number or letter expected");
+			}
+		}
+	}
+	return type;
 }
 
 // MultiplicativeOperator := "*" | "/" | "%" | "&&"
@@ -129,37 +147,42 @@ OPMUL MultiplicativeOperator(void){
 }
 
 // Term := Factor {MultiplicativeOperator Factor}
-void Term(void){
+enum TYPES Term(void){
+	TYPES type1, type2;
 	OPMUL mulop;
-	Factor();
+	type1 = Factor();						// Get first factor and its type
 	while(current==MULOP){
 		mulop=MultiplicativeOperator();		// Save operator in local variable
-		Factor();
-		cout << "\tpop %rbx"<<endl;	// get first operand
-		cout << "\tpop %rax"<<endl;	// get second operand
+		type2 = Factor();					// Get second factor and its type
+		if(type1!=type2) {					// Triggers an error if the types are different
+			Error("TYPES error: cannot mutiply/divide/modulo/and different types");
+		}
+		cout << "\tpop %rbx"<<endl;			// get first operand
+		cout << "\tpop %rax"<<endl;			// get second operand
 		switch(mulop){
 			case AND:
-				cout << "\tmulq	%rbx"<<endl;	// a * b -> %rdx:%rax
+				cout << "\tmulq	%rbx"<<endl;		// a * b -> %rdx:%rax
 				cout << "\tpush %rax\t# AND"<<endl;	// store result
 				break;
 			case MUL:
-				cout << "\tmulq	%rbx"<<endl;	// a * b -> %rdx:%rax
+				cout << "\tmulq	%rbx"<<endl;		// a * b -> %rdx:%rax
 				cout << "\tpush %rax\t# MUL"<<endl;	// store result
 				break;
 			case DIV:
 				cout << "\tmovq $0, %rdx"<<endl; 	// Higher part of numerator  
 				cout << "\tdiv %rbx"<<endl;			// quotient goes to %rax
-				cout << "\tpush %rax\t# DIV"<<endl;		// store result
+				cout << "\tpush %rax\t# DIV"<<endl;	// store result
 				break;
 			case MOD:
 				cout << "\tmovq $0, %rdx"<<endl; 	// Higher part of numerator  
 				cout << "\tdiv %rbx"<<endl;			// remainder goes to %rdx
-				cout << "\tpush %rdx\t# MOD"<<endl;		// store result
+				cout << "\tpush %rdx\t# MOD"<<endl;	// store result
 				break;
 			default:
-				Error("opérateur multiplicatif attendu");
+				Error("multiplicative operator expected");
 		}
 	}
+	return type1;
 }
 
 // AdditiveOperator := "+" | "-" | "||"
@@ -177,17 +200,21 @@ OPADD AdditiveOperator(void){
 }
 
 // SimpleExpression := Term {AdditiveOperator Term}
-void SimpleExpression(void){
+enum TYPES SimpleExpression(void){
+	TYPES type1, type2;
 	OPADD adop;
-	Term();
-	while(current==ADDOP){
+	type1 = Term();						// Get first term and its type
+	while(current==ADDOP){				// Loop to get all terms
 		adop=AdditiveOperator();		// Save operator in local variable
-		Term();
-		cout << "\tpop %rbx"<<endl;	// get first operand
-		cout << "\tpop %rax"<<endl;	// get second operand
+		type2 = Term();					// Get second term and its type
+		if(type1!=type2) {				// Triggers an error if the types are different
+			Error("TYPES error: cannot add/substract/or different types");
+		}
+		cout << "\tpop %rbx"<<endl;		// get first operand
+		cout << "\tpop %rax"<<endl;		// get second operand
 		switch(adop){
 			case OR:
-				cout << "\taddq	%rbx, %rax\t# OR"<<endl;// operand1 OR operand2
+				cout << "\taddq	%rbx, %rax\t# OR"<<endl;	// operand1 OR operand2
 				break;			
 			case ADD:
 				cout << "\taddq	%rbx, %rax\t# ADD"<<endl;	// add both operands
@@ -196,37 +223,80 @@ void SimpleExpression(void){
 				cout << "\tsubq	%rbx, %rax\t# SUB"<<endl;	// substract both operands
 				break;
 			default:
-				Error("opérateur additif inconnu");
+				Error("additive operator expected");
 		}
-		cout << "\tpush %rax"<<endl;			// store result
+		cout << "\tpush %rax"<<endl;						// store result
 	}
+	return type1;
 
 }
 
 // DeclarationPart := "[" Ident {"," Ident} "]"
+/*
 void DeclarationPart(void){
-	if(current!=RBRACKET)
-		Error("caractère '[' attendu");
+	if(current!=RBRACKET){					// Triggers an error if token is not '['
+		Error("'[' expected");
+	}
 	cout << "\t.data"<<endl;
 	cout << "\t.align 8"<<endl;
-	
-	current=(TOKEN) lexer->yylex();
-	if(current!=ID)
-		Error("Un identificater était attendu");
-	cout << lexer->YYText() << ":\t.quad 0"<<endl;
-	DeclaredVariables.insert(lexer->YYText());
-	current=(TOKEN) lexer->yylex();
-	while(current==COMMA){
-		current=(TOKEN) lexer->yylex();
-		if(current!=ID)
-			Error("Un identificateur était attendu");
-		cout << lexer->YYText() << ":\t.quad 0"<<endl;
-		DeclaredVariables.insert(lexer->YYText());
-		current=(TOKEN) lexer->yylex();
+	current=(TOKEN) lexer->yylex();			// consume '[' and advance to next token
+
+	if(current!=TYPE){						// Triggers an error if token is not a type
+		Error("type needs to be specified");
 	}
-	if(current!=LBRACKET)
-		Error("caractère ']' attendu");
-	current=(TOKEN) lexer->yylex();
+	current=(TOKEN) lexer->yylex();			// consume type and advance to next token
+
+	if(current!=ID){						// Triggers an error if token is not an identifier
+		Error("ientifier expected");
+	}
+	cout << lexer->YYText() << ":\t.quad 0"<<endl;
+	DeclaredVariables[lexer->YYText()]=INTEGER;		// Add variable to declared variables
+	current=(TOKEN) lexer->yylex();			// consume identifier and advance to next token
+
+	while(current==COMMA){					// Loop to get all identifiers
+		current=(TOKEN) lexer->yylex(); 	// consume ',' and advance to next token
+		if(current!=TYPE){					// Triggers an error if token is not an identifier
+			Error("identifier expected");
+		}
+		cout << lexer->YYText() << ":\t.quad 0"<<endl;
+		DeclaredVariables[lexer->YYText()]=INTEGER;
+		current=(TOKEN) lexer->yylex();		// consume identifier and advance to next token
+	}
+
+	if(current!=LBRACKET){					// Triggers an error if token is not ']'
+		Error("']' expected");
+	}
+	current=(TOKEN) lexer->yylex();			// consume ']' and advance to next token
+} */
+
+// DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
+void DeclarationPart(void) {
+    if (current != RBRACKET) { 					// Triggers an error if token is not '['
+        Error("'[' expected");
+    }
+    cout << "\t.data" << endl;
+    cout << "\t.align 8" << endl;
+
+    do {
+    	current = (TOKEN)lexer->yylex();				// consume '[' or ',' and advance to next token
+        if (current != TYPE) { 							// Triggers an error if token is not a type
+            Error("type needs to be specified");
+        }
+        current = (TOKEN)lexer->yylex(); 				// consume type and advance to next token
+
+        if (current != ID) { 							// Triggers an error if token is not an identifier
+            Error("identifier expected");
+        }
+        cout << lexer->YYText() << ":\t.quad 0" << endl;
+        DeclaredVariables[lexer->YYText()] = INTEGER; 	// Add variable to declared variables
+        current = (TOKEN)lexer->yylex(); 				// consume identifier and advance to next token
+
+    } while (current == COMMA); 						// Loop to get all identifiers
+
+	if(current!=LBRACKET){								// Triggers an error if token is not ']'
+		Error("']' expected");
+	}
+	current=(TOKEN) lexer->yylex();						// consume ']' and advance to next token
 }
 
 // RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
@@ -250,61 +320,75 @@ OPREL RelationalOperator(void){
 }
 
 // Expression := SimpleExpression [RelationalOperator SimpleExpression]
-void Expression(void){
+enum TYPES Expression(void){
+	TYPES type1, type2;
 	OPREL oprel;
-	SimpleExpression();
+	type1 = SimpleExpression();			// Get first simple expression and its type
 	if(current==RELOP){
-		oprel=RelationalOperator();
-		SimpleExpression();
+		oprel=RelationalOperator(); 	// Save operator in local variable
+		type2 = SimpleExpression();		// Get second simple expression and its type
+		if(type1!=type2) {				// Triggers an error if the types are different
+			Error("TYPES error: cannot compare different types");
+		}
 		cout << "\tpop %rax"<<endl;
 		cout << "\tpop %rbx"<<endl;
 		cout << "\tcmpq %rax, %rbx"<<endl;
 		switch(oprel){
 			case EQU:
-				cout << "\tje Vrai"<<++TagNumber<<"\t# If equal"<<endl;
+				cout << "\tje Vrai"<<++TagNumber<<"\t# If equal"<<endl;				// Jump if equal
 				break;
 			case DIFF:
-				cout << "\tjne Vrai"<<++TagNumber<<"\t# If different"<<endl;
+				cout << "\tjne Vrai"<<++TagNumber<<"\t# If different"<<endl;		// Jump if different
 				break;
 			case SUPE:
-				cout << "\tjae Vrai"<<++TagNumber<<"\t# If above or equal"<<endl;
+				cout << "\tjae Vrai"<<++TagNumber<<"\t# If above or equal"<<endl;	// Jump if above or equal
 				break;
 			case INFE:
-				cout << "\tjbe Vrai"<<++TagNumber<<"\t# If below or equal"<<endl;
+				cout << "\tjbe Vrai"<<++TagNumber<<"\t# If below or equal"<<endl;	// Jump if below or equal
 				break;
 			case INF:
-				cout << "\tjb Vrai"<<++TagNumber<<"\t# If below"<<endl;
+				cout << "\tjb Vrai"<<++TagNumber<<"\t# If below"<<endl;				// Jump if below
 				break;
 			case SUP:
-				cout << "\tja Vrai"<<++TagNumber<<"\t# If above"<<endl;
+				cout << "\tja Vrai"<<++TagNumber<<"\t# If above"<<endl;				// Jump if above
 				break;
 			default:
-				Error("Opérateur de comparaison inconnu");
+				Error("Relational operator expected");
 		}
 		cout << "\tpush $0\t\t# False"<<endl;
 		cout << "\tjmp Suite"<<TagNumber<<endl;
 		cout << "Vrai"<<TagNumber<<":\tpush $0xFFFFFFFFFFFFFFFF\t\t# True"<<endl;	
 		cout << "Suite"<<TagNumber<<":"<<endl;
+		return BOOLEAN;		// return BOOLEAN if the expression is relational
 	}
+	return type1;			// return the type of the expression if not
 }
 
 // AssignementStatement := Identifier ":=" Expression
 string AssignementStatement(void){
+	enum TYPES type1, type2;
 	string variable;
-	if(current!=ID)
-		Error("Identificateur attendu");
-	if(!IsDeclared(lexer->YYText())){
-		cerr << "Erreur : Variable '"<<lexer->YYText()<<"' non déclarée"<<endl;
+	if(current!=ID)							// Triggers an error if token is not an identifier
+		Error("identifier expected");
+	if(!IsDeclared(lexer->YYText())){		// Triggers an error if the identifier is not declared
+		cerr << "Error : variable '"<<lexer->YYText()<<"' is not declared"<<endl;
 		exit(-1);
 	}
+
 	variable=lexer->YYText();
+	type1 = DeclaredVariables[variable];	// Get type of the variable
+	current=(TOKEN) lexer->yylex();			// consume identifier and advance to next token
+
+	if(current!=ASSIGN){					// Triggers an error if token is not ':='
+		Error("':=' expected");
+	}
 	current=(TOKEN) lexer->yylex();
-	if(current!=ASSIGN)
-		Error("caractères ':=' attendus");
-	current=(TOKEN) lexer->yylex();
-	Expression();
+	type2 = Expression();
+	if(type1!=type2){						// Triggers an error if the types are different
+		Error("TYPES error: cannot assign different types");
+	}
 	cout << "\tpop "<<variable<<endl;
-	return variable;
+	return variable;						// return the variables name
 }
 
 void Statement(void);	
@@ -324,11 +408,15 @@ void IsKeyWord(const char *keyword) {
 
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 void IfStatement(void) {
+	enum TYPES type;
 	unsigned long localTag=++TagNumber;
 
 	IsKeyWord("IF");
 	cout<<"IF"<<localTag<<":"<<endl; // label for IF
-	Expression();
+	type = Expression();
+	if(type!=BOOLEAN) {
+		Error("TYPES error: 'IF' expression must be boolean");
+	}
 	cout<<"\tpop %rax"<<endl;
 	cout<<"\tcmpq $0, %rax"<<endl;
 	cout<<"\tje IFfalse"<<localTag<<"\t\t# jump if 'IF' statement is false (jump to 'ELSE' if there is one)"<<endl;
