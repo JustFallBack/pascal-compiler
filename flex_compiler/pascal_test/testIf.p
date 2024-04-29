@@ -11,4 +11,3 @@ ELSE IF a>2 THEN BEGIN
 END
 ELSE
     b:=b-1.
-
