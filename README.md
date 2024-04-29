@@ -50,23 +50,30 @@ Continue to next break point :
 -  WhileStatement := "WHILE" Expression "DO" Statement
 -  ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
 -  BlockStatement := "BEGIN" Statement { ";" Statement } "END"
+
 <br>
+
 -  Program := [DeclarationPart] StatementPart
 -  DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
 -  StatementPart := Statement {";" Statement} "."
 -  Statement := AssignementStatement
 -  AssignementStatement := Letter "=" Expression
+
 <br>
+
 -  Expression := SimpleExpression [RelationalOperator SimpleExpression]
 -  SimpleExpression := Term {AdditiveOperator Term}
 -  Term := Factor {MultiplicativeOperator Factor}
 -  Factor := Number | Identifier | "(" Expression ")"
 -  Identifier := Letter{Letter|Digit}
 -  Number := Digit{Digit}
+
 <br>
+
 -  AdditiveOperator := "+" | "-" | "||"
 -  MultiplicativeOperator := "*" | "/" | "%" | "&&"
 -  RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 -  Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 -  Letter := "a"|...|"z"
 -  Type := "INTEGER" | "BOOLEAN"
+-  <span style="color: red;">This text is red.</span>
