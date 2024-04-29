@@ -76,4 +76,3 @@ Continue to next break point :
 -  Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 -  Letter := "a"|...|"z"
 -  Type := "INTEGER" | "BOOLEAN"
--  <span style="color: red;">This text is red.</span>
