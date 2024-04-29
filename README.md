@@ -25,12 +25,12 @@ will compile the program using `test<span style="color: red;">All</span>.p` file
 ## Debug the executable with gdb:
 Create a break point where gdb stops at specified label (for exemple, `break main` makes gdb stops at the start of the assembly code).<br>
 You can make break point at a specific line (`break 26` to make gdb stops at 26th line) :
->(gdb) break label<br>
->(gdb) break line
+>(gdb) break _label_<br>
+>(gdb) break _line_
 
 Clear specified break point :
->(gdb) break label<br>
->(gdb) break line
+>(gdb) clear _label_<br>
+>(gdb) clear _line_
 
 Run the debug :
 >(gdb) run
@@ -50,25 +50,23 @@ Continue to next break point :
 -  WhileStatement := "WHILE" Expression "DO" Statement
 -  ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
 -  BlockStatement := "BEGIN" Statement { ";" Statement } "END"
-
+<br>
 -  Program := [DeclarationPart] StatementPart
--  <span style="color: red;">DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"</span>
+-  DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
 -  StatementPart := Statement {";" Statement} "."
 -  Statement := AssignementStatement
 -  AssignementStatement := Letter "=" Expression
-
+<br>
 -  Expression := SimpleExpression [RelationalOperator SimpleExpression]
 -  SimpleExpression := Term {AdditiveOperator Term}
 -  Term := Factor {MultiplicativeOperator Factor}
 -  Factor := Number | Identifier | "(" Expression ")"
--  <span style="color: red;">Identifier := Letter{Letter|Digit}</span>
+-  Identifier := Letter{Letter|Digit}
 -  Number := Digit{Digit}
-
+<br>
 -  AdditiveOperator := "+" | "-" | "||"
 -  MultiplicativeOperator := "*" | "/" | "%" | "&&"
 -  RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 -  Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 -  Letter := "a"|...|"z"
--  <span style="color: red;">Type := "INTEGER" | "BOOLEAN"</span>
-
-<span style="color: red;">Type := "INTEGER" | "BOOLEAN"</span>
+-  Type := "INTEGER" | "BOOLEAN"
