@@ -150,15 +150,15 @@ OPMUL MultiplicativeOperator(void){
 enum TYPES Term(void){
 	TYPES type1, type2;
 	OPMUL mulop;
-	type1 = Factor();						// Get first factor and its type
+	type1 = Factor();								// Get first factor and its type
 	while(current==MULOP){
-		mulop=MultiplicativeOperator();		// Save operator in local variable
-		type2 = Factor();					// Get second factor and its type
-		if(type1!=type2) {					// Triggers an error if the types are different
+		mulop=MultiplicativeOperator();				// Save operator in local variable
+		type2 = Factor();							// Get second factor and its type
+		if(type1!=type2) {							// Triggers an error if the types are different
 			Error("TYPES error: cannot mutiply/divide/modulo/and different types");
 		}
-		cout << "\tpop %rbx"<<endl;			// get first operand
-		cout << "\tpop %rax"<<endl;			// get second operand
+		cout << "\tpop %rbx"<<endl;					// get first operand
+		cout << "\tpop %rax"<<endl;					// get second operand
 		switch(mulop){
 			case AND:
 				cout << "\tmulq	%rbx"<<endl;		// a * b -> %rdx:%rax
@@ -203,15 +203,15 @@ OPADD AdditiveOperator(void){
 enum TYPES SimpleExpression(void){
 	TYPES type1, type2;
 	OPADD adop;
-	type1 = Term();						// Get first term and its type
-	while(current==ADDOP){				// Loop to get all terms
-		adop=AdditiveOperator();		// Save operator in local variable
-		type2 = Term();					// Get second term and its type
-		if(type1!=type2) {				// Triggers an error if the types are different
+	type1 = Term();											// Get first term and its type
+	while(current==ADDOP){									// Loop to get all terms
+		adop=AdditiveOperator();							// Save operator in local variable
+		type2 = Term();										// Get second term and its type
+		if(type1!=type2) {									// Triggers an error if the types are different
 			Error("TYPES error: cannot add/substract/or different types");
 		}
-		cout << "\tpop %rbx"<<endl;		// get first operand
-		cout << "\tpop %rax"<<endl;		// get second operand
+		cout << "\tpop %rbx"<<endl;							// get first operand
+		cout << "\tpop %rax"<<endl;							// get second operand
 		switch(adop){
 			case OR:
 				cout << "\taddq	%rbx, %rax\t# OR"<<endl;	// operand1 OR operand2
@@ -271,7 +271,7 @@ void DeclarationPart(void){
 
 // DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
 void DeclarationPart(void) {
-    if (current != RBRACKET) { 					// Triggers an error if token is not '['
+    if (current != RBRACKET) { 							// Triggers an error if token is not '['
         Error("'[' expected");
     }
     cout << "\t.data" << endl;
@@ -323,11 +323,11 @@ OPREL RelationalOperator(void){
 enum TYPES Expression(void){
 	TYPES type1, type2;
 	OPREL oprel;
-	type1 = SimpleExpression();			// Get first simple expression and its type
+	type1 = SimpleExpression();														// Get first simple expression and its type
 	if(current==RELOP){
-		oprel=RelationalOperator(); 	// Save operator in local variable
-		type2 = SimpleExpression();		// Get second simple expression and its type
-		if(type1!=type2) {				// Triggers an error if the types are different
+		oprel=RelationalOperator(); 												// Save operator in local variable
+		type2 = SimpleExpression();													// Get second simple expression and its type
+		if(type1!=type2) {															// Triggers an error if the types are different
 			Error("TYPES error: cannot compare different types");
 		}
 		cout << "\tpop %rax"<<endl;
@@ -359,9 +359,9 @@ enum TYPES Expression(void){
 		cout << "\tjmp Suite"<<TagNumber<<endl;
 		cout << "Vrai"<<TagNumber<<":\tpush $0xFFFFFFFFFFFFFFFF\t\t# True"<<endl;	
 		cout << "Suite"<<TagNumber<<":"<<endl;
-		return BOOLEAN;		// return BOOLEAN if the expression is relational
+		return BOOLEAN;																// return BOOLEAN if the expression is relational
 	}
-	return type1;			// return the type of the expression if not
+	return type1;																	// return the type of the expression if not
 }
 
 // AssignementStatement := Identifier ":=" Expression
@@ -394,7 +394,7 @@ string AssignementStatement(void){
 void Statement(void);	
 
 // check if specified keyword is expected and read keyword
-void IsKeyWord(const char *keyword) {
+void CheckReadKeyword(const char *keyword) {
 	if(current!=KEYWORD) {
 		Error("keyword expected");
 	}
@@ -411,43 +411,45 @@ void IfStatement(void) {
 	enum TYPES type;
 	unsigned long localTag=++TagNumber;
 
-	IsKeyWord("IF");
-	cout<<"IF"<<localTag<<":"<<endl; // label for IF
+	CheckReadKeyword("IF");
+	cout<<"IF"<<localTag<<":"<<endl; 								// label for IF
 	type = Expression();
 	if(type!=BOOLEAN) {
-		Error("TYPES error: 'IF' expression must be boolean");
+		Error("TYPES error: 'IF' expression must be boolean");		// Triggers an error if the expression is not boolean in 'IF' statement
 	}
 	cout<<"\tpop %rax"<<endl;
 	cout<<"\tcmpq $0, %rax"<<endl;
-	cout<<"\tje IFfalse"<<localTag<<"\t\t# jump if 'IF' statement is false (jump to 'ELSE' if there is one)"<<endl;
+	cout<<"\tje IFfalse"<<localTag<<"\t\t# jump to ELSE "<<endl;	// jump to ELSE if 'IF' expression is false (even if there is no else)
 
-	IsKeyWord("THEN");
-	cout<<"IFtrue"<<localTag<<":\t\t\t# THEN"<<endl; // label for THEN
+	CheckReadKeyword("THEN");
+	cout<<"IFtrue"<<localTag<<":\t\t\t# THEN"<<endl; 				// label for THEN
 	Statement();
-	cout<<"\tjmp IFend"<<localTag<<"\t\t# if 'IF' statement has been executed, jump to the end (avoid else)"<<endl;
-	cout<<"IFfalse"<<localTag<<":\t\t\t# ELSE"<<endl; // label for ELSE (even if there is no else)
+	cout<<"\tjmp IFend"<<localTag<<"\t\t# jump to endIf"<<endl;		// jump to end of 'IF' statement
+	cout<<"IFfalse"<<localTag<<":\t\t\t# ELSE"<<endl; 				// label for ELSE (even if there is no else)
 
-	IsKeyWord("ELSE");
-	Statement();
-	cout<<"IFend"<<localTag<<":"<<endl; // label for end of 'IF' statement
+	if(current==KEYWORD && strcmp(lexer->YYText(),"ELSE")==0) {
+		CheckReadKeyword("ELSE");
+		Statement();
+	}
+	cout<<"IFend"<<localTag<<":"<<endl; 							// label for end of 'IF' statement
 }
 
 // WhileStatement := "WHILE" Expression "DO" Statement
 void WhileStatement(void) {
 	unsigned long localTag=++TagNumber;
 
-	IsKeyWord("WHILE");
-	cout<<"WHILE"<<localTag<<":"<<endl; // label for WHILE
+	CheckReadKeyword("WHILE");
+	cout<<"WHILE"<<localTag<<":"<<endl; 								// label for WHILE
 	Expression();
 	cout<<"\tpop %rax"<<endl;
 	cout<<"\tcmpq $0, %rax"<<endl;
-	cout<<"\tje WHILEend"<<localTag<<"\t\t# if 'WHILE' expression is false, jump to the end"<<endl;
+	cout<<"\tje WHILEend"<<localTag<<"\t\t# jump to end of WHILE"<<endl; // jump to end of 'WHILE' statement if expression is false
 
-	IsKeyWord("DO");
-	cout<<"WHILEtrue"<<localTag<<":\t\t\t# DO"<<endl; // label for DO
+	CheckReadKeyword("DO");
+	cout<<"WHILEtrue"<<localTag<<":\t\t\t# DO"<<endl; 					// label for DO
 	Statement();
-	cout<<"\tjmp WHILE"<<localTag<<endl;
-	cout<<"WHILEend"<<localTag<<":"<<endl; // label for end of 'WHILE' statement
+	cout<<"\tjmp WHILE"<<localTag<<endl;								// jump to 'WHILE' statement
+	cout<<"WHILEend"<<localTag<<":"<<endl; 								// label for end of 'WHILE' statement
 
 }
 
@@ -455,24 +457,23 @@ void WhileStatement(void) {
 void ForStatement(void) {
 	unsigned long localTag=++TagNumber;
 
-	cout<<"FOR"<<localTag<<":"; // label for FOR
-	IsKeyWord("FOR");
+	cout<<"FOR"<<localTag<<":"; 											// label for FOR
+	CheckReadKeyword("FOR");
 
 	string loop_var = AssignementStatement();
 
-
-	IsKeyWord("TO");
+	CheckReadKeyword("TO");
 	Expression();
-	cout<<"TO"<<localTag<<":"; // label for TO
-	cout<<"\tmovq (%rsp), %rax"<<endl; // necessary to avoid 'too many memory references'
+	cout<<"TO"<<localTag<<":"; 												// label for TO
+	cout<<"\tmovq (%rsp), %rax"<<endl; 										// necessary to avoid 'too many memory references'
 	cout<<"\tcmpq %rax, "<<loop_var<<endl;
-	cout<<"\tjae FORend"<<localTag<<"\t\t# jump at end of 'FOR' statement if loop_var is above or equal expression"<<endl;
+	cout<<"\tjae FORend"<<localTag<<"\t\t# jump at the end of FOR"<<endl; 	// jump at the end of 'FOR' statement if loop_var is above or equal expression
 
-	IsKeyWord("DO");
+	CheckReadKeyword("DO");
 	Statement();
 	cout<<"\tincq "<<loop_var<<"\t\t# loop_var++"<<endl;
-	cout<<"\tjmp TO"<<localTag<<endl;
-	cout<<"FORend"<<localTag<<":"<<endl; // label for end of 'FOR' statement
+	cout<<"\tjmp TO"<<localTag<<endl;										// jump to 'TO' statement
+	cout<<"FORend"<<localTag<<":"<<endl; 									// label for end of 'FOR' statement
 }
 
 
@@ -480,16 +481,16 @@ void ForStatement(void) {
 void BlockStatement(void) {
 	unsigned long localTag=++TagNumber;
 
-	IsKeyWord("BEGIN");
-	cout<<"BEGIN"<<localTag<<":"<<endl; // label for BEGIN
+	CheckReadKeyword("BEGIN");
+	cout<<"BEGIN"<<localTag<<":"<<endl; 									// label for BEGIN
 	Statement();
 	while(current==SEMICOLON) {
 		current=(TOKEN) lexer->yylex();
 		Statement();
 	}
 
-	IsKeyWord("END");
-	cout<<"END"<<localTag<<":"<<endl; // label for END
+	CheckReadKeyword("END");
+	cout<<"END"<<localTag<<":"<<endl; 										// label for END
 }
 
 // Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
@@ -498,16 +499,16 @@ void Statement(void){
 		AssignementStatement();
 	}
 	else if(current==KEYWORD) {
-		if(strcmp(lexer->YYText(),"IF")==0) {
+		if(strcmp(lexer->YYText(),"IF")==0) {						// Check if keyword is 'IF'
 			IfStatement();
 		}
-		else if(strcmp(lexer->YYText(), "WHILE")==0) {
+		else if(strcmp(lexer->YYText(), "WHILE")==0) {				// Check if keyword is 'WHILE'
 			WhileStatement();
 		}
-		else if(strcmp(lexer->YYText(),"FOR")==0) {
+		else if(strcmp(lexer->YYText(),"FOR")==0) {					// Check if keyword is 'FOR'
 			ForStatement();
 		}
-		else if(strcmp(lexer->YYText(),"BEGIN")==0) {
+		else if(strcmp(lexer->YYText(),"BEGIN")==0) {				// Check if keyword is 'BEGIN'
 			BlockStatement();
 		}
 		else {
@@ -528,35 +529,32 @@ void StatementPart(void){
 	cout << "\tmovq %rsp, %rbp\t# Save the position of the stack's top"<<endl;
 	Statement();
 	while(current==SEMICOLON){
-		current=(TOKEN) lexer->yylex();
+		current=(TOKEN) lexer->yylex();												// consume ';' and advance to next token
 		Statement();
 	}
 	if(current!=DOT)
 		Error("caractère '.' attendu");
-	current=(TOKEN) lexer->yylex();
+	current=(TOKEN) lexer->yylex();													// consume '.' and advance to next token
 }
 
 // Program := [DeclarationPart] StatementPart
 void Program(void){
-	if(current==RBRACKET)
+	if(current==RBRACKET)															// Check if token is '['
 		DeclarationPart();
 	StatementPart();	
 }
 
-int main(void){	// First version : Source code on standard input and assembly code on standard output
-	// Header for gcc assembler / linker
-	cout << "\t\t\t# This code was produced by the CERI Compiler"<<endl;
-	// Let's proceed to the analysis and code production
+int main(void){
+	cout << "\t\t\t# This code was produced by the compiler made by Elliot Pozucek"<<endl; 		// Header for the gcc assembler / linker
 	current=(TOKEN) lexer->yylex();
 	Program();
-	// Trailer for the gcc assembler / linker
-	cout << "\tmovq %rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;
+	
+	cout << "\tmovq %rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;				// Trailer for the gcc assembler / linker
 	cout << "\tret\t\t\t# Return from main function"<<endl;
 	if(current!=FEOF){
-		cerr <<"Caractères en trop à la fin du programme : ["<<current<<"]";
-		Error("."); // unexpected characters at the end of program
+		cerr <<"Caractères en trop à la fin du programme : ["<<current<<"]";					// unexpected characters at the end of program
+		Error("."); 
 	}
-
 }
 		
 			

@@ -10,4 +10,7 @@ ELSE IF a>2 THEN BEGIN
     c:=c+1
 END
 ELSE
-    b:=b-1.
+    b:=b-1;
+
+IF a==2 THEN
+    b:=b+1.
