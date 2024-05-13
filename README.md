@@ -55,8 +55,9 @@ Continue to next break point :
 
 <br>
 
--  Program := [DeclarationPart] StatementPart
--  DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
+-  Program := [VarDeclarationPart] StatementPart
+-  VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."
+-  VarDeclaration := Identifer {"," Identifier} ":" Type
 -  StatementPart := Statement {";" Statement} "."
 -  Statement := AssignementStatement
 -  AssignementStatement := Letter "=" Expression
@@ -77,4 +78,4 @@ Continue to next break point :
 -  RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 -  Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 -  Letter := "a"|...|"z"
--  Type := "INTEGER" | "BOOLEAN"
+-  Type := "BOOLEAN" | "CHAR" | "INTEGER" | "DOUBLE"
