@@ -1,4 +1,4 @@
-[INTEGER a, INTEGER b, INTEGER i, INTEGER c]
+VAR     a,b,c,i : INTEGER.
 
 a:=3;
 FOR i:=1 TO 3 DO 

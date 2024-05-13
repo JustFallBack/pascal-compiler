@@ -32,8 +32,7 @@ using namespace std;
 enum OPREL {EQU, DIFF, INF, SUP, INFE, SUPE, WTFR};
 enum OPADD {ADD, SUB, OR, WTFA};
 enum OPMUL {MUL, DIV, MOD, AND ,WTFM};
-enum KEYWORD2 {IF, WHILE, FOR, BEGIN, DO, THEN, ELSE, TO, WTFK};
-enum TYPES {INTEGER, BOOLEAN, WTFT};
+enum TYPES {INTEGER, BOOLEAN, DOUBLE, CHAR ,WTFT};
 
 TOKEN current;				// Current token
 
@@ -59,14 +58,28 @@ void Error(string s){
 	exit(-1);
 }
 
+// check if specified keyword is expected and read keyword
+void CheckReadKeyword(const char *keyword) {
+	if(current!=KEYWORD) {
+		Error("keyword expected");
+	}
+	if(strcmp(lexer->YYText(),keyword)!=0) {
+		string err(keyword);
+		string err_msg = "'"+err+"' keyword expected";
+		Error(err_msg);
+	}
+	current=(TOKEN) lexer->yylex();
+}
+
 // Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 // WhileStatement := "WHILE" Expression "DO" Statement
 // ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 
-// Program := [DeclarationPart] StatementPart
-// DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
+// Program := [VarDeclarationPart] StatementPart
+// VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."
+// VarDeclaration := Identifer {"," Identifier} ":" Type
 // StatementPart := Statement {";" Statement} "."
 // Statement := AssignementStatement
 // AssignementStatement := Letter "=" Expression
@@ -83,7 +96,7 @@ void Error(string s){
 // RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 // Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 // Letter := "a"|...|"z"
-// Type := "INTEGER" | "BOOLEAN"
+// Type := "BOOLEAN" | "CHAR" | "INTEGER" | "DOUBLE"
 	
 // Identifier := Letter{Letter|Digit}
 enum TYPES Identifier(void){
@@ -131,17 +144,23 @@ enum TYPES Factor(void){
 }
 
 // MultiplicativeOperator := "*" | "/" | "%" | "&&"
-OPMUL MultiplicativeOperator(void){
+OPMUL MultiplicativeOperator(void) {
 	OPMUL opmul;
-	if(strcmp(lexer->YYText(),"*")==0)
-		opmul=MUL;
-	else if(strcmp(lexer->YYText(),"/")==0)
-		opmul=DIV;
-	else if(strcmp(lexer->YYText(),"%")==0)
-		opmul=MOD;
-	else if(strcmp(lexer->YYText(),"&&")==0)
-		opmul=AND;
-	else opmul=WTFM;
+	if(strcmp(lexer->YYText(),"*")==0) {
+		opmul = MUL;
+	}
+	else if(strcmp(lexer->YYText(),"/")==0) {
+		opmul = DIV;
+	}
+	else if(strcmp(lexer->YYText(),"%")==0) {
+		opmul = MOD;
+	}
+	else if(strcmp(lexer->YYText(),"&&")==0) {
+		opmul = AND;
+	}
+	else {
+		opmul=WTFM;
+	}
 	current=(TOKEN) lexer->yylex();
 	return opmul;
 }
@@ -186,21 +205,26 @@ enum TYPES Term(void){
 }
 
 // AdditiveOperator := "+" | "-" | "||"
-OPADD AdditiveOperator(void){
+OPADD AdditiveOperator(void) {
 	OPADD opadd;
-	if(strcmp(lexer->YYText(),"+")==0)
-		opadd=ADD;
-	else if(strcmp(lexer->YYText(),"-")==0)
-		opadd=SUB;
-	else if(strcmp(lexer->YYText(),"||")==0)
-		opadd=OR;
-	else opadd=WTFA;
+	if(strcmp(lexer->YYText(),"+")==0) {
+		opadd = ADD;
+	}
+	else if(strcmp(lexer->YYText(),"-")==0) {
+		opadd = SUB;
+	}
+	else if(strcmp(lexer->YYText(),"||")==0) {
+		opadd = OR;
+	}
+	else {
+		opadd = WTFA;
+	}
 	current=(TOKEN) lexer->yylex();
 	return opadd;
 }
 
 // SimpleExpression := Term {AdditiveOperator Term}
-enum TYPES SimpleExpression(void){
+enum TYPES SimpleExpression(void) {
 	TYPES type1, type2;
 	OPADD adop;
 	type1 = Term();											// Get first term and its type
@@ -228,76 +252,89 @@ enum TYPES SimpleExpression(void){
 		cout << "\tpush %rax"<<endl;						// store result
 	}
 	return type1;
-
 }
 
-// DeclarationPart := "[" Ident {"," Ident} "]"
-/*
-void DeclarationPart(void){
-	if(current!=RBRACKET){					// Triggers an error if token is not '['
-		Error("'[' expected");
+// Type := "BOOLEAN" | "CHAR" | "INTEGER" | "DOUBLE"
+TYPES GetType(void) {
+	TYPES type;
+	if(strcmp(lexer->YYText(),"BOOLEAN")==0) {
+		type = BOOLEAN;
 	}
-	cout << "\t.data"<<endl;
-	cout << "\t.align 8"<<endl;
-	current=(TOKEN) lexer->yylex();			// consume '[' and advance to next token
-
-	if(current!=TYPE){						// Triggers an error if token is not a type
-		Error("type needs to be specified");
+	else if(strcmp(lexer->YYText(),"INTEGER")==0) {
+		type = INTEGER;
 	}
-	current=(TOKEN) lexer->yylex();			// consume type and advance to next token
-
-	if(current!=ID){						// Triggers an error if token is not an identifier
-		Error("ientifier expected");
+	else if(strcmp(lexer->YYText(),"CHAR")==0) {
+		type = CHAR;
 	}
-	cout << lexer->YYText() << ":\t.quad 0"<<endl;
-	DeclaredVariables[lexer->YYText()]=INTEGER;		// Add variable to declared variables
-	current=(TOKEN) lexer->yylex();			// consume identifier and advance to next token
+	else if(strcmp(lexer->YYText(),"DOUBLE")==0) {
+		type = DOUBLE;
+	}
+	else {
+		type = WTFT;
+	}
+	current=(TOKEN)lexer->yylex();
+	return type;
+}
 
-	while(current==COMMA){					// Loop to get all identifiers
-		current=(TOKEN) lexer->yylex(); 	// consume ',' and advance to next token
-		if(current!=TYPE){					// Triggers an error if token is not an identifier
+// VarDeclaration := Identifier {"," Identifier} ":" Type
+void VarDeclaration(void) {
+	set<string> identifiers;					// Set to store identifiers
+	if(current!=ID) {
+		Error("identifier expected");
+	}
+	identifiers.insert(lexer->YYText());		// Store identifier in set
+	current=(TOKEN)lexer->yylex();				// Consume identifier and advance to next token
+
+	while(current==COMMA) {						// Loop to get all identifiers
+		current=(TOKEN)lexer->yylex();			// Consume ',' and advance to next token
+		if(current!=ID) {
 			Error("identifier expected");
 		}
-		cout << lexer->YYText() << ":\t.quad 0"<<endl;
-		DeclaredVariables[lexer->YYText()]=INTEGER;
-		current=(TOKEN) lexer->yylex();		// consume identifier and advance to next token
+		identifiers.insert(lexer->YYText());	// Store identifier in set
+		current=(TOKEN)lexer->yylex();			// Consume identifier and advance to next token
 	}
 
-	if(current!=LBRACKET){					// Triggers an error if token is not ']'
-		Error("']' expected");
+	if(current!=COLON) {
+		Error("':' expected");
 	}
-	current=(TOKEN) lexer->yylex();			// consume ']' and advance to next token
-} */
+	current=(TOKEN)lexer->yylex();				// Consume ':' and advance to next token
 
-// DeclarationPart := "[" Type Identifier {"," Type Identifier} "]"
-void DeclarationPart(void) {
-    if (current != RBRACKET) { 							// Triggers an error if token is not '['
-        Error("'[' expected");
-    }
-    cout << "\t.data" << endl;
+	cout << "\t.data" << endl;
     cout << "\t.align 8" << endl;
-
-    do {
-    	current = (TOKEN)lexer->yylex();				// consume '[' or ',' and advance to next token
-        if (current != TYPE) { 							// Triggers an error if token is not a type
-            Error("type needs to be specified");
-        }
-        current = (TOKEN)lexer->yylex(); 				// consume type and advance to next token
-
-        if (current != ID) { 							// Triggers an error if token is not an identifier
-            Error("identifier expected");
-        }
-        cout << lexer->YYText() << ":\t.quad 0" << endl;
-        DeclaredVariables[lexer->YYText()] = INTEGER; 	// Add variable to declared variables
-        current = (TOKEN)lexer->yylex(); 				// consume identifier and advance to next token
-
-    } while (current == COMMA); 						// Loop to get all identifiers
-
-	if(current!=LBRACKET){								// Triggers an error if token is not ']'
-		Error("']' expected");
+	TYPES type = GetType();
+	for(set<string>::iterator i=identifiers.begin(); i!=identifiers.end(); ++i) {
+		switch(type) {							// Print variable name and its type
+			case INTEGER:
+			case BOOLEAN:
+				cout<<*i<<":\t.quad 0"<<endl;	
+				break;
+			case DOUBLE:
+				cout<<*i<<":\t.double 0.0"<<endl;
+				break;
+			case CHAR:
+				cout<<*i<<":\t.byte 0"<<endl;
+				break;
+			default:
+				Error("unknown type"); 
+		}
+		DeclaredVariables[*i]=type;				// Add variable to declared variables map
 	}
-	current=(TOKEN) lexer->yylex();						// consume ']' and advance to next token
 }
+
+// VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."
+void VarDeclarationPart(void) {
+	CheckReadKeyword("VAR");					// Check if keyword is 'VAR', if yes advance to next token
+	VarDeclaration();
+	while(current == SEMICOLON) {				// Loop to get all VarDeclarations
+		current = (TOKEN)lexer->yylex();
+		VarDeclaration();
+	}
+	if(current!=DOT) {							// Triggers an error if token is not '.'
+		Error("'.' expected");
+	}
+	current=(TOKEN)lexer->yylex();
+}
+
 
 // RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 OPREL RelationalOperator(void){
@@ -393,18 +430,6 @@ string AssignementStatement(void){
 
 void Statement(void);	
 
-// check if specified keyword is expected and read keyword
-void CheckReadKeyword(const char *keyword) {
-	if(current!=KEYWORD) {
-		Error("keyword expected");
-	}
-	if(strcmp(lexer->YYText(),keyword)!=0) {
-		string err(keyword);
-		string err_msg = "'"+err+"' keyword expected";
-		Error(err_msg);
-	}
-	current=(TOKEN) lexer->yylex();
-}
 
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 void IfStatement(void) {
@@ -538,14 +563,13 @@ void StatementPart(void){
 }
 
 // Program := [DeclarationPart] StatementPart
-void Program(void){
-	if(current==RBRACKET)															// Check if token is '['
-		DeclarationPart();
+void Program(void){														// Check if token is '['
+	VarDeclarationPart();
 	StatementPart();	
 }
 
 int main(void){
-	cout << "\t\t\t# This code was produced by the compiler made by Elliot Pozucek"<<endl; 		// Header for the gcc assembler / linker
+	cout << "\t\t\t\t# This code was produced by the compiler made by Elliot Pozucek"<<endl; 	// Header for the gcc assembler / linker
 	current=(TOKEN) lexer->yylex();
 	Program();
 	

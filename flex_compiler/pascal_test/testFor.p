@@ -1,4 +1,5 @@
-[INTEGER voila, INTEGER super, INTEGER c12e6aef6, INTEGER i, INTEGER j]
+VAR     voila,super : INTEGER;
+        c12e6aef6,i,j : INTEGER.
 
 voila:=3;
 c12e6aef6:=5;

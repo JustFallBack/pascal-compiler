@@ -1,4 +1,4 @@
-[INTEGER a, INTEGER b, INTEGER c, INTEGER d, INTEGER i, INTEGER j, INTEGER k]
+VAR a,b,c,d,i,j,k : INTEGER.
 
 BEGIN
   a := 3;

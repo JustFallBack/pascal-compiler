@@ -1,4 +1,4 @@
-[INTEGER i, INTEGER j, INTEGER b]
+VAR     i,j,b : INTEGER.
 
 b:=3;
 

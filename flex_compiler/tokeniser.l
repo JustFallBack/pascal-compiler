@@ -25,8 +25,7 @@ alpha   [A-Za-z]
 digit   [0-9]
 number  {digit}+
 id	{alpha}({alpha}|{digit})*
-keyword (IF|THEN|ELSE|WHILE|DO|FOR|TO|BEGIN|END)
-type (INTEGER|BOOLEAN)
+keyword (IF|THEN|ELSE|WHILE|DO|FOR|TO|BEGIN|END|BOOLEAN|INTEGER|DOUBLE|CHAR|VAR)
 addop	(\+|\-|\|\|)
 mulop	(\*|\/|%|\&\&)
 relop	(\<|\>|"=="|\<=|\>=|!=)
@@ -39,13 +38,13 @@ unknown [^\"A-Za-z0-9 \n\r\t\(\)\<\>\=\!\%\&\|\}\-\;\.]+
 {relop}		return RELOP;
 {number}	return NUMBER;
 {keyword}	return KEYWORD;
-{type}		return TYPE;
 {id}		return ID;
 {stringconst}	return STRINGCONST;
 "["		return RBRACKET;
 "]"		return LBRACKET;
 ","		return COMMA;
 ";"		return SEMICOLON;
+":"		return COLON;
 "."		return DOT;
 ":="		return ASSIGN;
 "("		return RPARENT;
