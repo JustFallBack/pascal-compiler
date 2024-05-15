@@ -71,74 +71,91 @@ void CheckReadKeyword(const char *keyword) {
 	current=(TOKEN) lexer->yylex();
 }
 
-// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
+// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 // WhileStatement := "WHILE" Expression "DO" Statement
 // ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
+// DisplayStatement := "DISPLAY" Expression
 
 // Program := [VarDeclarationPart] StatementPart
 // VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."
 // VarDeclaration := Identifer {"," Identifier} ":" Type
 // StatementPart := Statement {";" Statement} "."
 // Statement := AssignementStatement
-// AssignementStatement := Letter "=" Expression
+// AssignementStatement := Letter ":=" Expression
 
 // Expression := SimpleExpression [RelationalOperator SimpleExpression]
 // SimpleExpression := Term {AdditiveOperator Term}
 // Term := Factor {MultiplicativeOperator Factor}
-// Factor := Number | Identifier | "(" Expression ")"
+// Factor := "(" Expression ")" | Number | Identifier | CharConst
 // Identifier := Letter{Letter|Digit}
 // Number := Digit{Digit}
+// CharConst := "'" Letter "'"
 
 // AdditiveOperator := "+" | "-" | "||"
 // MultiplicativeOperator := "*" | "/" | "%" | "&&"
 // RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 // Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 // Letter := "a"|...|"z"
-// Type := "BOOLEAN" | "CHAR" | "INTEGER" | "DOUBLE"
+// Type := "INTEGER" | "BOOLEAN" | "DOUBLE" | "CHAR"
 	
 // Identifier := Letter{Letter|Digit}
 enum TYPES Identifier(void){
-	cout << "\tpush "<<lexer->YYText()<<endl;
-	current=(TOKEN) lexer->yylex();
-	return INTEGER;
+	enum TYPES type;
+	if(!IsDeclared(lexer->YYText())){			// Triggers an error if the variable is not declared
+		cerr<<"Error: Variable '"<<lexer->YYText()<<"' not declared"<<endl;
+		Error(".");
+	}
+	type=DeclaredVariables[lexer->YYText()];	// Get type of the variable
+	cout<<"\tpush "<<lexer->YYText()<<endl;
+	current=(TOKEN) lexer->yylex();				// Advance to next token
+	return type;
 }
 
 // Number := Digit{Digit}
 enum TYPES Number(void){
-	cout <<"\tpush $"<<atoi(lexer->YYText())<<endl;		// Get next token without changing current
-	current=(TOKEN) lexer->yylex();						// Advance to next token
+	cout<<"\tpush $"<<atoi(lexer->YYText())<<endl;
+	current=(TOKEN) lexer->yylex();				// Advance to next token
 	return INTEGER;
 }
 
-enum TYPES Expression(void);			// Called by Term() and calls Term()
+// CharConst := "'" Letter "'"
+enum TYPES CharConst(void){
+	cout<<"\tmovq $0, %rax"<<endl;
+	cout<<"\tmovb $"<<lexer->YYText()<<",%al"<<endl;
+	cout<<"\tpush %rax\t# push a 64-bit version of "<<lexer->YYText()<<endl;
+	current=(TOKEN) lexer->yylex();			// Advance to next token
+	return CHAR;
+}
 
-// Factor := Number | Identifier | "(" Expression ")"
+enum TYPES Expression(void);				// Called by Term() and calls Term()
+
+// Factor := "(" Expression ")" | Number | Identifier | CharConst
 enum TYPES Factor(void){
-	TYPES type;											// Type of the factor
-	if(current==RPARENT){
-		current=(TOKEN) lexer->yylex();					// consume '(' and advance to next token
-		type = Expression();							// get expression and its type
-		if(current!=LPARENT) {							// triggers an error if token is not ')'
-			Error("')' expected");
+	TYPES type;
+	switch(current) {							
+	case RPARENT:							// if token is '(', call Expression() and check if next token is ')'
+		current=(TOKEN) lexer->yylex();		// consume '(' and advance to next token
+		type = Expression();				// get expression and its type
+		if(current!=LPARENT) {							
+			Error("')' expected");			// triggers an error if token is not ')'
 		}
 		else {
-			current=(TOKEN) lexer->yylex();				// consume ')' and advance to next token
+			current=(TOKEN) lexer->yylex();	// consume ')' and advance to next token
 		}
-	}
-	else {
-		if (current==NUMBER) {
-			type = Number();
-		}
-		else {
-			if(current==ID) {
-				type = Identifier();
-			}
-			else {
-				Error("'(' or number or letter expected");
-			}
-		}
+		break;
+	case NUMBER:							// if token is a number, call Number()
+		type = Number();
+		break;
+	case ID:								// if token is an identifier, call Identifier()
+		type = Identifier();
+		break;
+	case CHARCONST: 						// if token is a character, call CharConst()
+		type = CharConst();
+		break;
+	default:								// triggers an error if token is not '(', number, identifier or character
+		Error("'(' or number or letter or char expected");
 	}
 	return type;
 }
@@ -254,20 +271,20 @@ enum TYPES SimpleExpression(void) {
 	return type1;
 }
 
-// Type := "BOOLEAN" | "CHAR" | "INTEGER" | "DOUBLE"
-TYPES GetType(void) {
+// Type := "INTEGER" | "BOOLEAN" | "DOUBLE" | "CHAR"
+TYPES Type(void) {
 	TYPES type;
-	if(strcmp(lexer->YYText(),"BOOLEAN")==0) {
-		type = BOOLEAN;
-	}
-	else if(strcmp(lexer->YYText(),"INTEGER")==0) {
+	if(strcmp(lexer->YYText(),"INTEGER")==0) {
 		type = INTEGER;
 	}
-	else if(strcmp(lexer->YYText(),"CHAR")==0) {
-		type = CHAR;
+	else if(strcmp(lexer->YYText(),"BOOLEAN")==0) {
+		type = BOOLEAN;
 	}
 	else if(strcmp(lexer->YYText(),"DOUBLE")==0) {
 		type = DOUBLE;
+	}
+	else if(strcmp(lexer->YYText(),"CHAR")==0) {
+		type = CHAR;
 	}
 	else {
 		type = WTFT;
@@ -299,9 +316,7 @@ void VarDeclaration(void) {
 	}
 	current=(TOKEN)lexer->yylex();				// Consume ':' and advance to next token
 
-	cout << "\t.data" << endl;
-    cout << "\t.align 8" << endl;
-	TYPES type = GetType();
+	TYPES type = Type();						// Get type of the variable
 	for(set<string>::iterator i=identifiers.begin(); i!=identifiers.end(); ++i) {
 		switch(type) {							// Print variable name and its type
 			case INTEGER:
@@ -430,6 +445,60 @@ string AssignementStatement(void){
 
 void Statement(void);	
 
+// DisplayStatement := "DISPLAY" Expression
+void DisplayStatement(void) {
+	enum TYPES type;
+	unsigned long localTag=++TagNumber;
+	CheckReadKeyword("DISPLAY");											// Check if keyword is 'DISPLAY'
+	type = Expression();
+
+	cout<<"DISPLAY"<<localTag<<":"<<endl;									// label for DISPLAY
+	switch(type) {
+		case INTEGER:
+			cout<<"\tpop %rsi\t\t# Value to display"<<endl;
+			cout<<"\tmovq $FormatString1, %rdi\t\t#%llu"<<endl;				// Get INTEGER format for printf
+			cout<<"\tmovl $0, %eax"<<endl;
+			cout<<"\tpush %rbp\t\t# Save the value in %rbp (modified by printf)"<<endl;
+			cout<<"\tcall printf@PLT"<<endl;								// Call printf (will display the value)
+			cout<<"\tpop %rbp\t\t# Restore %rbp value"<<endl;
+			break;
+		case BOOLEAN:
+			cout<<"\tpop %rsi\t\t# Value to display"<<endl;
+			cout<<"\tcmpq $0, %rsi"<<endl;									// Compare value to 0
+			cout<<"\tje FALSE"<<localTag<<endl;								// Jump to FALSE if value is 0
+			cout<<"\tmovq $TrueString, %rdi\t\t# TRUE"<<endl;				// Get TRUE string for printf
+			cout<<"\tmovl $0, %eax"<<endl;
+			cout<<"\tpush %rbp\t\t# Save the value in %rbp (modified by printf)"<<endl;
+			cout<<"\tjmp DISPLAYend"<<localTag<<endl;
+			cout<<"FALSE"<<localTag<<":"<<endl;								// label for FALSE
+			cout<<"\tmovq $FalseString, %rdi\t\t# FALSE"<<endl;				// Get FALSE string for printf
+			cout<<"\tmovl $0, %eax"<<endl;
+			cout<<"\tpush %rbp\t\t# Save the value in %rbp (modified by printf)"<<endl;
+			cout<<"DISPLAYend"<<localTag<<":"<<endl;
+			cout<<"\tcall printf@PLT"<<endl;								// Call printf (will display TRUE or FALSE)
+			cout<<"\tpop %rbp\t\t# Restore %rbp value"<<endl;
+			break;
+		case CHAR:
+			cout<<"\tpop %rsi\t\t\t# get character in the 8 lowest bits of %si"<<endl;
+			cout<<"\tmovq $FormatString3, %rdi\t# \"%c\\n\""<<endl;			// Get CHAR format for printf
+			cout<<"\tmovl $0, %eax"<<endl;
+			cout<<"\tpush %rbp\t\t# Save the value in %rbp (modified by printf)"<<endl;
+			cout<<"\tcall printf@PLT"<<endl;								// Call printf (will display the character)
+			cout<<"\tpop %rbp\t\t# Restore %rbp value"<<endl;
+			break;
+		case DOUBLE:
+			break;
+		default:
+			cerr<<"Type: "<<type<<endl;
+			Error("type cannot be displayed.");
+	}
+	// pop %rsi    # The value to be displayed
+    // movq $FormatString1, %rdi    # "%llu\n"
+    // movl    $0, %eax
+    // push %rbp    # save the value in %rbp (modified by printf)
+    // call    printf@PLT
+    // pop %rbp    # restore %rbp value
+}
 
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 void IfStatement(void) {
@@ -518,13 +587,16 @@ void BlockStatement(void) {
 	cout<<"END"<<localTag<<":"<<endl; 										// label for END
 }
 
-// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
+// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
 void Statement(void){
 	if(current==ID) {
 		AssignementStatement();
 	}
 	else if(current==KEYWORD) {
-		if(strcmp(lexer->YYText(),"IF")==0) {						// Check if keyword is 'IF'
+		if(strcmp(lexer->YYText(),"DISPLAY")==0) {					// Check if keyword is 'DISPLAY'
+			DisplayStatement();
+		}
+		else if(strcmp(lexer->YYText(),"IF")==0) {					// Check if keyword is 'IF'
 			IfStatement();
 		}
 		else if(strcmp(lexer->YYText(), "WHILE")==0) {				// Check if keyword is 'WHILE'
@@ -537,7 +609,7 @@ void Statement(void){
 			BlockStatement();
 		}
 		else {
-			Error("keyword not identified (must be IF or WHILE or FOR or BEGIN)");
+			Error("keyword not identified (must be IF or WHILE or FOR or BEGIN or DISPLAY)");
 		}
 	}
 	else {
@@ -547,7 +619,7 @@ void Statement(void){
 
 
 // StatementPart := Statement {";" Statement} "."
-void StatementPart(void){
+void StatementPart(void) {
 	cout << "\t.text\t\t# The following lines contain the program"<<endl;
 	cout << "\t.globl main\t# The main function must be visible from outside"<<endl;
 	cout << "main:\t\t\t# The main function body :"<<endl;
@@ -563,20 +635,27 @@ void StatementPart(void){
 }
 
 // Program := [DeclarationPart] StatementPart
-void Program(void){														// Check if token is '['
+void Program(void){	
+	cout << "\t.data" << endl;
+    // cout << "\t.align 8" << endl;
+	cout << "FormatString1:\t.string \"%llu\"\t# used by printf to display 64-bit unsigned integers"<<endl; 
+	cout << "FormatString2:\t.string \"%lf\"\t# used by printf to display 64-bit floating point numbers"<<endl; 
+	cout << "FormatString3:\t.string \"%c\"\t# used by printf to display a 8-bit single character"<<endl; 
+	cout << "TrueString: \t.string \"TRUE\"\t# used by printf to display the boolean value TRUE"<<endl; 
+	cout << "FalseString:\t.string \"FALSE\"\t# used by printf to display the boolean value FALSE"<<endl;
 	VarDeclarationPart();
 	StatementPart();	
 }
 
 int main(void){
-	cout << "\t\t\t\t# This code was produced by the compiler made by Elliot Pozucek"<<endl; 	// Header for the gcc assembler / linker
-	current=(TOKEN) lexer->yylex();
+	cout<<"\t\t\t\t# This code was produced by the compiler made by Elliot Pozucek"<<endl; 		// Header for the gcc assembler / linker
+	current=(TOKEN) lexer->yylex();																// Get first token
 	Program();
 	
-	cout << "\tmovq %rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;				// Trailer for the gcc assembler / linker
-	cout << "\tret\t\t\t# Return from main function"<<endl;
+	cout<<"\n\tmovq %rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;				// Trailer for the gcc assembler / linker
+	cout<<"\tret\t\t\t# Return from main function"<<endl;
 	if(current!=FEOF){
-		cerr <<"Caractères en trop à la fin du programme : ["<<current<<"]";					// unexpected characters at the end of program
+		cerr<<"Unexpected characters at the end of the program: [" << current << "]";			// Unexpected characters at the end of the program
 		Error("."); 
 	}
 }

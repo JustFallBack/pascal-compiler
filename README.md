@@ -47,11 +47,12 @@ Continue to next break point :
 
 **This version can handle :**
 
--  Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement
+-  Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
 -  IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 -  WhileStatement := "WHILE" Expression "DO" Statement
 -  ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
 -  BlockStatement := "BEGIN" Statement { ";" Statement } "END"
+-  DisplayStatement := "DISPLAY" Expression
 
 <br>
 
@@ -67,9 +68,10 @@ Continue to next break point :
 -  Expression := SimpleExpression [RelationalOperator SimpleExpression]
 -  SimpleExpression := Term {AdditiveOperator Term}
 -  Term := Factor {MultiplicativeOperator Factor}
--  Factor := Number | Identifier | "(" Expression ")"
+-  Factor := "(" Expression ")" | Number | Identifier | CharConst
 -  Identifier := Letter{Letter|Digit}
 -  Number := Digit{Digit}
+-  CharConst := "'" Letter "'"
 
 <br>
 
@@ -78,4 +80,4 @@ Continue to next break point :
 -  RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 -  Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 -  Letter := "a"|...|"z"
--  Type := "BOOLEAN" | "CHAR" | "INTEGER" | "DOUBLE"
+-  Type := "INTEGER" | "BOOLEAN" | "DOUBLE" | "CHAR"
