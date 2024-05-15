@@ -45,7 +45,17 @@ Continue to next break point :
 >(gdb) continue<br>
 >(gdb) c
 
-**This version can handle :**
+## Features handled
+
+**This version can handle**
+
+### Type handled
+
+- INTEGER
+- BOOLEAN
+- CHAR
+
+### Grammar
 
 -  Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
 -  IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
