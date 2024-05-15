@@ -45,10 +45,6 @@ Continue to next break point :
 >(gdb) continue<br>
 >(gdb) c
 
-## Features handled
-
-**This version can handle**
-
 ### Type handled
 
 - INTEGER
