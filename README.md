@@ -24,6 +24,10 @@ will compile the program using `testAll.p` file.
 
 > ddd ./test
 
+**Debug the executable manually with gdb:**
+
+> gdb ./test
+
 ## Debug the executable with gdb:
 Create a break point where gdb stops at specified label (for exemple, `break main` makes gdb stops at the start of the assembly code).<br>
 You can make break point at a specific line (`break 26` to make gdb stops at 26th line) :
@@ -52,12 +56,14 @@ Continue to next break point :
 - CHAR
 - DOUBLE
 
+**Note : DISPLAY is not supported when using FOR statements.**
+
 ## Grammar
 
 -  Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
 -  IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 -  WhileStatement := "WHILE" Expression "DO" Statement
--  ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
+-  ForStatement := "FOR" AssignementStatement ( "TO" | "DOWNTO" ) Expression "DO" Statement
 -  BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 -  DisplayStatement := "DISPLAY" Expression
 

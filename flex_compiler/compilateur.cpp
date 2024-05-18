@@ -74,7 +74,7 @@ void CheckReadKeyword(const char *keyword) {
 // Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 // WhileStatement := "WHILE" Expression "DO" Statement
-// ForStatement := "FOR" AssignementStatement "To" Expression "DO" Statement
+// ForStatement := "FOR" AssignementStatement ( "TO" | "DOWNTO" ) Expression "DO" Statement
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 // DisplayStatement := "DISPLAY" Expression
 
@@ -487,7 +487,7 @@ enum TYPES Expression(void) {
 		cout<<"\tcmpq\t%rax, %rbx"<<endl;
 		switch(oprel) {
 			case EQU:
-				cout<<"\tje \tVrai"<<++TagNumber<<"\t\t# If equal"<<endl;			// Jump if equal
+				cout<<"\tje  \tVrai"<<++TagNumber<<"\t\t# If equal"<<endl;			// Jump if equal
 				break;
 			case DIFF:
 				cout<<"\tjne \tVrai"<<++TagNumber<<"\t\t# If different"<<endl;		// Jump if different
@@ -499,10 +499,10 @@ enum TYPES Expression(void) {
 				cout<<"\tjbe \tVrai"<<++TagNumber<<"\t\t# If below or equal"<<endl;	// Jump if below or equal
 				break;
 			case INF:
-				cout<<"\tjb \tVrai"<<++TagNumber<<"\t\t# If below"<<endl;			// Jump if below
+				cout<<"\tjb  \tVrai"<<++TagNumber<<"\t\t# If below"<<endl;			// Jump if below
 				break;
 			case SUP:
-				cout<<"\tja \tVrai"<<++TagNumber<<"\t\t# If above"<<endl;			// Jump if above
+				cout<<"\tja  \tVrai"<<++TagNumber<<"\t\t# If above"<<endl;			// Jump if above
 				break;
 			default:
 				Error("relational operator expected.");
@@ -564,7 +564,7 @@ void DisplayStatement(void) {
 		case BOOLEAN:
 			cout<<"\tpop \t%rsi\t\t# Value to display"<<endl;
 			cout<<"\tcmpq\t$0, %rsi"<<endl;									// Compare value to 0
-			cout<<"\tje \tFALSE"<<localTag<<endl;							// Jump to FALSE if value is 0
+			cout<<"\tje  \tFALSE"<<localTag<<endl;							// Jump to FALSE if value is 0
 			cout<<"\tmovq\t$TrueString, %rdi\t\t# TRUE"<<endl;				// Get TRUE string for printf
 			cout<<"\tmovl\t$0, %eax"<<endl;
 			cout<<"\tpush\t%rbp\t\t# Save the value in %rbp (modified by printf)"<<endl;
@@ -636,43 +636,66 @@ void WhileStatement(void) {
 	unsigned long localTag=++TagNumber;
 
 	CheckReadKeyword("WHILE");
-	cout<<"WHILE"<<localTag<<":"<<endl; 								// Label for WHILE
+	cout<<"WHILE"<<localTag<<":"<<endl; 									// Label for WHILE
 	Expression();
 	cout<<"\tpop \t%rax"<<endl;
 	cout<<"\tcmpq\t$0, %rax"<<endl;
-	cout<<"\tje \tWHILEend"<<localTag<<"\t\t# jump to end of WHILE"<<endl;// Jump to end of 'WHILE' statement if expression is false
+	cout<<"\tje \tWHILEend"<<localTag<<"\t\t# jump to end of WHILE"<<endl;	// Jump to end of 'WHILE' statement if expression is false
 
 	CheckReadKeyword("DO");
-	cout<<"WHILEtrue"<<localTag<<":\t\t\t# DO"<<endl; 					// Label for DO
+	cout<<"WHILEtrue"<<localTag<<":\t\t\t# DO"<<endl; 						// Label for DO
 	Statement();
-	cout<<"\tjmp \tWHILE"<<localTag<<endl;								// Jump to 'WHILE' statement
-	cout<<"WHILEend"<<localTag<<":"<<endl; 								// Label for end of 'WHILE' statement
+	cout<<"\tjmp \tWHILE"<<localTag<<endl;									// Jump to 'WHILE' statement
+	cout<<"WHILEend"<<localTag<<":"<<endl; 									// Label for end of 'WHILE' statement
 
 }
 
 // ForStatement := "FOR" AssignementStatement "TO" Expression "DO" Statement
 void ForStatement(void) {
 	unsigned long localTag=++TagNumber;
-
-	cout<<"FOR"<<localTag<<":"; 											// Label for FOR
+	enum TYPES type;
+	cout<<"FOR"<<localTag<<":"; 												// Label for FOR
 	CheckReadKeyword("FOR");
 
 	string loop_var = AssignementStatement();
+	if (DeclaredVariables[loop_var]!=INTEGER) {
+		Error("TYPES error: loop variable must be integer.");					// Triggers an error if the loop variable is not integer
+	}
+	if(strcmp(lexer->YYText(),"TO")==0) {										// If keyword is 'TO'
+		CheckReadKeyword("TO");	
+		type=Expression();
+		if(type!=INTEGER) {
+			Error("TYPES error: 'TO' expression must be integer.");				// Triggers an error if the expression is not integer in 'TO' statement
+		}
+		cout<<"TO"<<localTag<<":"; 												// Label for TO
+		cout<<"\tmovq\t(%rsp), %rax"<<endl; 									// Necessary to avoid 'too many memory references'
+		cout<<"\tcmpq\t%rax, "<<loop_var<<endl;
+		cout<<"\tjae \tFORend"<<localTag<<"\t\t# jump at the end of FOR"<<endl; // Jump at the end of 'FOR' statement if loop_var is above or equal expression
 
-	CheckReadKeyword("TO");
-	Expression();
-	cout<<"TO"<<localTag<<":"; 												// Label for TO
-	cout<<"\tmovq\t(%rsp), %rax"<<endl; 										// Necessary to avoid 'too many memory references'
-	cout<<"\tcmpq\t%rax, "<<loop_var<<endl;
-	cout<<"\tjae \tFORend"<<localTag<<"\t\t# jump at the end of FOR"<<endl; 	// Jump at the end of 'FOR' statement if loop_var is above or equal expression
+		CheckReadKeyword("DO");
+		Statement();
+		cout<<"\tincq\t"<<loop_var<<"\t\t# loop_var++"<<endl;
+		cout<<"\tjmp \tTO"<<localTag<<endl;										// Jump to 'TO' statement
+		cout<<"FORend"<<localTag<<":"<<endl; 									// Label for end of 'FOR' statement
+	}
+	else {																		// If keyword is 'DOWNTO'
+		CheckReadKeyword("DOWNTO");
+		type=Expression();
+		if(type!=INTEGER) {
+			Error("TYPES error: 'DOWNTO' expression must be integer.");			// Triggers an error if the expression is not integer in 'DOWNTO' statement
+		}
+		cout<<"DOWNTO"<<localTag<<":"; 											// Label for DOWNTO
+		cout<<"\tmovq\t(%rsp), %rax"<<endl; 									// Necessary to avoid 'too many memory references'
+		cout<<"\tcmpq\t%rax, "<<loop_var<<endl;
+		cout<<"\tjbe \tFORend"<<localTag<<"\t\t# jump at the end of FOR"<<endl; // Jump at the end of 'FOR' statement if loop_var is below or equal expression
 
-	CheckReadKeyword("DO");
-	Statement();
-	cout<<"\tincq\t"<<loop_var<<"\t\t# loop_var++"<<endl;
-	cout<<"\tjmp \tTO"<<localTag<<endl;										// Jump to 'TO' statement
-	cout<<"FORend"<<localTag<<":"<<endl; 									// Label for end of 'FOR' statement
+		CheckReadKeyword("DO");
+		Statement();
+		cout<<"\tdecq\t"<<loop_var<<"\t\t# loop_var--"<<endl;
+		cout<<"\tjmp \tDOWNTO"<<localTag<<endl;									// Jump to 'DOWNTO' statement
+		cout<<"FORend"<<localTag<<":"<<endl; 									// Label for end of 'FOR' statement
+	}
 }
-
 
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 void BlockStatement(void) {
@@ -705,7 +728,7 @@ void Statement(void) {
 		else if (strcmp(lexer->YYText(), "WHILE")==0) {				// Check if keyword is 'WHILE'
 			WhileStatement();
 		}
-		else if (strcmp(lexer->YYText(),"FOR")==0) {					// Check if keyword is 'FOR'
+		else if (strcmp(lexer->YYText(),"FOR")==0) {				// Check if keyword is 'FOR'
 			ForStatement();
 		}
 		else if (strcmp(lexer->YYText(),"BEGIN")==0) {				// Check if keyword is 'BEGIN'
