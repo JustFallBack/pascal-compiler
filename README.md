@@ -50,6 +50,7 @@ Continue to next break point :
 - INTEGER
 - BOOLEAN
 - CHAR
+- DOUBLE
 
 ## Grammar
 
@@ -76,7 +77,7 @@ Continue to next break point :
 -  Term := Factor {MultiplicativeOperator Factor}
 -  Factor := "(" Expression ")" | Number | Identifier | CharConst
 -  Identifier := Letter{Letter|Digit}
--  Number := Digit{Digit}
+-  Number := {digit}+(\.{digit}+)?
 -  CharConst := "'" Letter "'"
 
 <br>

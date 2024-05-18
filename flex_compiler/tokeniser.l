@@ -23,7 +23,7 @@ charconst  \'\\?.\'
 ws      [ \t\n\r]+
 alpha   [A-Za-z]
 digit   [0-9]
-number  {digit}+
+number  {digit}+(\.{digit}+)?
 id	{alpha}({alpha}|{digit})*
 keyword (IF|THEN|ELSE|WHILE|DO|FOR|TO|BEGIN|END|BOOLEAN|INTEGER|DOUBLE|VAR|DISPLAY)
 addop	(\+|\-|\|\|)
