@@ -599,6 +599,8 @@ void DisplayStatement(void) {
 			cerr<<"Type: "<<type<<endl;
 			Error("type cannot be displayed.");
 	}
+	cout<<"\tmovq\t$10, %rdi\t\t# ASCII code for newline character"<<endl;	// Get ASCII code for newline character
+    cout<<"\tcall\tputchar@PLT"<<endl;										// Call putchar (will display newline character and effectively skip a line)
 }
 
 // IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
