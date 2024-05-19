@@ -717,8 +717,10 @@ void BlockStatement(void) {
 }
 
 // CaseLabel := CharConst {"," CharConst} | {Digit}+ ".." {Digit}+ | Number {"," Number} | Identifier
-enum TYPES CaseLabel(void) {
+enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag) {
 	enum TYPES type1, type2;
+	unsigned long loop, end_loop;						// Local variable to loop when necessary ({Digit}+ ".." {Digit}+)
+	
 	if (current==CHARCONST) {							// CharConst {"," CharConst}
 		type1 = CharConst();
 		while(current==COMMA) {
@@ -728,35 +730,82 @@ enum TYPES CaseLabel(void) {
 			}
 			type2 = CharConst();
 		}
+		// INCOMPLETE
 		return CHAR;
 	}
-	else if (current==NUMBER) {
-		type1 = Number();								// INTEGER or DOUBLE
-		if (type1==INTEGER && current==DOT) {			// {Digit}+ ".." {Digit}+
-			current=(TOKEN) lexer->yylex();
-			if (current!=DOT) {
-				Error("'..' expected.");
-			}
-			current=(TOKEN) lexer->yylex();				// Consume '..' and advance to next token	
-			type2 = Number();
-			if (type2!=INTEGER) {
-				Error("INTEGER expected.");
-			}
-			return INTEGER;		
-			// INCOMPLETE
+	else if (current==NUMBER) {							// Number {"," Number} | {Digit}+ ".." {Digit}+
+		try {
+			loop = atoi(lexer->YYText());				// Get first digit for loop
+		} catch (invalid_argument e) {
+			Error("INTEGER expected.");
 		}
-		else {											// Number {"," Number}
-			while(current==COMMA) {
+		type1 = Number();								// INTEGER or DOUBLE
+		if (type1==INTEGER) {
+			if (current==DOT) {							// {Digit}+ ".." {Digit}+
 				current=(TOKEN) lexer->yylex();
-				if(current!=NUMBER) {
-					Error("number expected.");
+				if (current!=DOT) {
+					Error("'..' expected.");
 				}
-				type2 = Number();
-				if (type1!=type2) {
-					Error("Same type expected in list element.");
+				current=(TOKEN) lexer->yylex();			// Consume '..' and advance to next token	
+				cout<<"\tpop \t%rbx"<<endl;
+				cout<<"\tpop \t%rax"<<endl;
+				cout<<"\tcmpq\t%rax, %rbx"<<endl;
+				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
+				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+				try {
+					end_loop = atoi(lexer->YYText());	// Get second digit for loop
+				} catch (invalid_argument e) {
+					Error("INTEGER expected.");
 				}
+				while (loop<end_loop) {					// Loop to get all numbers between loop and end_loop-1
+					cout<<"\tpush\t$"<<++loop<<endl;
+					cout<<"\tpop \t%rbx"<<endl;
+					cout<<"\tpop \t%rax"<<endl;
+					cout<<"\tcmpq\t%rax, %rbx"<<endl;
+					cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
+					cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+				}
+				type2 = Number();						// Will push end_loop on the stack
+				if (type2!=INTEGER) {					// Should not happen
+					Error("INTEGER expected.");
+				}
+				cout<<"\tpop \t%rbx"<<endl;
+				cout<<"\tpop \t%rax"<<endl;
+				cout<<"\tcmpq\t%rax, %rbx"<<endl;
+				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
+				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+				cout<<"\tjmp \tendCaseElement_"<<caseTag<<"_"<<localTag<<endl;
+				return INTEGER;		
 			}
-			return type1;
+			else if (current==COLON || current==COMMA) {// {Digit}+ { "," {Digit}+ }
+				cout<<"\tpop \t%rbx"<<endl;
+				cout<<"\tpop \t%rax"<<endl;
+				cout<<"\tcmpq\t%rax, %rbx"<<endl;
+				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
+				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+				while(current==COMMA) {
+					current=(TOKEN) lexer->yylex();		// Consume ',' and advance to next token
+					if(current!=NUMBER) {
+						Error("number expected.");
+					}
+					type2 = Number();
+					cout<<"\tpop \t%rbx"<<endl;
+					cout<<"\tpop \t%rax"<<endl;
+					cout<<"\tcmpq\t%rax, %rbx"<<endl;
+					cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
+					cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+					if (type1!=type2) {
+						Error("Same type expected in list element.");
+					}
+				}
+				cout<<"\tjmp \tendCaseElement_"<<caseTag<<"_"<<localTag<<endl;
+				return type1;
+			}
+			else {
+				Error("':' or ',' expected.");
+			}
+		}
+		else if (type1==DOUBLE) {
 			// INCOMPLETE
 		}
 	}
@@ -769,19 +818,22 @@ enum TYPES CaseLabel(void) {
 	}
 	else {
 		Error("case label expected (CHAR or NUMBER or IDENTIFIER).");
-	}	
+	}
+	return WTFT;
 }
 
 // CaseListElement := CaseLabel ":" Statement
-enum TYPES CaseListElement(void) {
+enum TYPES CaseListElement(unsigned long localTag, unsigned long caseTag) {
 	enum TYPES type;
-	type = CaseLabel();
+	type = CaseLabel(localTag, caseTag);
 	if (current!=COLON) {
 		Error("':' expected.");
 	}
-	current=(TOKEN) lexer->yylex();				// Consume ':' and advance to next token
+	current=(TOKEN) lexer->yylex();										// Consume ':' and advance to next token
 	if (current==ID || current==KEYWORD) {
+		cout<<"CaseStatement_"<<caseTag<<"_"<<localTag<<":"<<endl;		// Label for CASE statement
 		Statement();
+		cout<<"\tjmp \tENDCase"<<localTag<<endl;						// Jump to END of "CASE" statement
 	}
 	else {
 		Error("statement expected.");
@@ -792,18 +844,23 @@ enum TYPES CaseListElement(void) {
 // CaseStatement := "CASE" Expression "OF" CaseListElement {";" CaseListElement} ["ELSE" Statement] "END"
 void CaseStatement(void) {
 	unsigned long localTag=++TagNumber;
+	unsigned long caseTag=0;
 	enum TYPES type1, type2;
 	CheckReadKeyword("CASE");
 	cout<<"CASE"<<localTag<<":"<<endl; 										// Label for CASE
 	type1 = Expression();
 	CheckReadKeyword("OF");
-	type2 = CaseListElement();
+	cout<<"CaseElement_"<<++caseTag<<"_"<<localTag<<":"<<endl;
+	type2 = CaseListElement(localTag, caseTag);
+	cout<<"endCaseElement_"<<caseTag<<"_"<<localTag<<":"<<endl;				// Label for END of "CASE" element
 	if (type1!=type2) {
 		Error("TYPES error: 'CASE' expression and 'CASE' element must have the same type.");
 	}
 	while (current==SEMICOLON) {
 		current=(TOKEN) lexer->yylex();										// Consume ';' and advance to next token
-		type2 = CaseListElement();
+		cout<<"CaseElement_"<<++caseTag<<"_"<<localTag<<":"<<endl;
+		type2 = CaseListElement(localTag, caseTag);
+		cout<<"endCaseElement_"<<caseTag<<"_"<<localTag<<":"<<endl;			// Label for END of "CASE" element
 		if (type1!=type2) {
 			Error("TYPES error: 'CASE' expression and 'CASE' element must have the same type.");
 		}
@@ -813,9 +870,13 @@ void CaseStatement(void) {
 	}
 	if (strcmp(lexer->YYText(),"ELSE")==0) {
 		CheckReadKeyword("ELSE");
+		cout<<"ELSECase"<<localTag<<":"<<endl; 								// Label for ELSE
+		cout<<"\tpop \t%rax"<<endl;											// 'CASE' Expression value is not useful anymore, so we pop it
+		cout<<"\txor \t%rax, %rax\t\t# rax = 0"<<endl;						// Set rax to 0
 		Statement();
 	}
 	CheckReadKeyword("END");
+	cout<<"ENDCase"<<localTag<<":"<<endl; 									// Label for END
 }
 
 // Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement | CaseStatement
