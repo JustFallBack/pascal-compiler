@@ -57,15 +57,19 @@ Continue to next break point :
 - DOUBLE
 
 **Note : DISPLAY is not supported when using FOR statements.**
+**CASE statement is not fully implemented yet.**
 
 ## Grammar
 
--  Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
+-  Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement | CaseStatement
 -  IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 -  WhileStatement := "WHILE" Expression "DO" Statement
 -  ForStatement := "FOR" AssignementStatement ( "TO" | "DOWNTO" ) Expression "DO" Statement
 -  BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 -  DisplayStatement := "DISPLAY" Expression
+-  CaseStatement := "CASE" Expression "OF" CaseListElement {";" CaseListElement} ["ELSE" Statement] "END"
+-  CaseListElement := CaseLabel ":" Statement
+-  CaseLabel := CharConst {"," CharConst} | {Digit}+ ".." {Digit}+ | Number {"," Number} | Identifier
 
 <br>
 

@@ -71,12 +71,16 @@ void CheckReadKeyword(const char *keyword) {
 	current=(TOKEN) lexer->yylex();
 }
 
-// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
-// IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
+// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement | CaseStatement
+// IfStatement := "IF" Expression "THEN" Statement ["ELSE" Statement]
 // WhileStatement := "WHILE" Expression "DO" Statement
-// ForStatement := "FOR" AssignementStatement ( "TO" | "DOWNTO" ) Expression "DO" Statement
+// ForStatement := "FOR" AssignementStatement ("TO" | "DOWNTO") Expression "DO" Statement
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 // DisplayStatement := "DISPLAY" Expression
+// CaseStatement := "CASE" Expression "OF" CaseListElement {";" CaseListElement} ["ELSE" Statement] "END"
+// CaseListElement := CaseLabel ":" (Statement | EmptyCase)
+// CaseLabel := CharConst {"," CharConst} | {Digit}+ ".." {Digit}+ | Number {"," Number} | Identifier
+// EmptyCase := 
 
 // Program := [VarDeclarationPart] StatementPart
 // VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."
@@ -713,7 +717,109 @@ void BlockStatement(void) {
 	cout<<"END"<<localTag<<":"<<endl; 										// Label for END
 }
 
-// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement
+// CaseLabel := CharConst {"," CharConst} | {Digit}+ ".." {Digit}+ | Number {"," Number} | Identifier
+enum TYPES CaseLabel(void) {
+	enum TYPES type1, type2;
+	if (current==CHARCONST) {							// CharConst {"," CharConst}
+		type1 = CharConst();
+		while(current==COMMA) {
+			current=(TOKEN) lexer->yylex();
+			if(current!=CHARCONST) {
+				Error("character expected.");
+			}
+			type2 = CharConst();
+		}
+		return CHAR;
+	}
+	else if (current==NUMBER) {
+		type1 = Number();								// INTEGER or DOUBLE
+		if (type1==INTEGER && current==DOT) {			// {Digit}+ ".." {Digit}+
+			current=(TOKEN) lexer->yylex();
+			if (current!=DOT) {
+				Error("'..' expected.");
+			}
+			current=(TOKEN) lexer->yylex();				// Consume '..' and advance to next token	
+			type2 = Number();
+			if (type2!=INTEGER) {
+				Error("INTEGER expected.");
+			}
+			return INTEGER;		
+			// INCOMPLETE
+		}
+		else {											// Number {"," Number}
+			while(current==COMMA) {
+				current=(TOKEN) lexer->yylex();
+				if(current!=NUMBER) {
+					Error("number expected.");
+				}
+				type2 = Number();
+				if (type1!=type2) {
+					Error("Same type expected in list element.");
+				}
+			}
+			return type1;
+			// INCOMPLETE
+		}
+	}
+	else if (current==ID) {								// Identifier
+		if (!IsDeclared(lexer->YYText())) {
+			cerr << "Error : variable '"<<lexer->YYText()<<"' is not declared"<<endl;
+			Error(".");
+		}
+		return DeclaredVariables[lexer->YYText()];
+	}
+	else {
+		Error("case label expected (CHAR or NUMBER or IDENTIFIER).");
+	}	
+}
+
+// CaseListElement := CaseLabel ":" Statement
+enum TYPES CaseListElement(void) {
+	enum TYPES type;
+	type = CaseLabel();
+	if (current!=COLON) {
+		Error("':' expected.");
+	}
+	current=(TOKEN) lexer->yylex();				// Consume ':' and advance to next token
+	if (current==ID || current==KEYWORD) {
+		Statement();
+	}
+	else {
+		Error("statement expected.");
+	}
+	return type;
+}
+
+// CaseStatement := "CASE" Expression "OF" CaseListElement {";" CaseListElement} ["ELSE" Statement] "END"
+void CaseStatement(void) {
+	unsigned long localTag=++TagNumber;
+	enum TYPES type1, type2;
+	CheckReadKeyword("CASE");
+	cout<<"CASE"<<localTag<<":"<<endl; 										// Label for CASE
+	type1 = Expression();
+	CheckReadKeyword("OF");
+	type2 = CaseListElement();
+	if (type1!=type2) {
+		Error("TYPES error: 'CASE' expression and 'CASE' element must have the same type.");
+	}
+	while (current==SEMICOLON) {
+		current=(TOKEN) lexer->yylex();										// Consume ';' and advance to next token
+		type2 = CaseListElement();
+		if (type1!=type2) {
+			Error("TYPES error: 'CASE' expression and 'CASE' element must have the same type.");
+		}
+	}
+	if (current!=KEYWORD) {
+		Error("keyword expected (ELSE or END).");
+	}
+	if (strcmp(lexer->YYText(),"ELSE")==0) {
+		CheckReadKeyword("ELSE");
+		Statement();
+	}
+	CheckReadKeyword("END");
+}
+
+// Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement | CaseStatement
 void Statement(void) {
 	if (current==ID) {
 		AssignementStatement();
@@ -733,6 +839,9 @@ void Statement(void) {
 		}
 		else if (strcmp(lexer->YYText(),"BEGIN")==0) {				// Check if keyword is 'BEGIN'
 			BlockStatement();
+		}
+		else if (strcmp(lexer->YYText(),"CASE")==0) {				// Check if keyword is 'CASE'
+			CaseStatement();
 		}
 		else {
 			Error("keyword not identified (must be IF or WHILE or FOR or BEGIN or DISPLAY.)");
@@ -779,7 +888,7 @@ int main(void){
 	current=(TOKEN) lexer->yylex();																// Get first token
 	Program();
 	
-	cout<<"\n\tmovq\t%rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;				// Trailer for the gcc assembler / linker
+	cout<<"\n\tmovq\t%rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;			// Trailer for the gcc assembler / linker
 	cout<<"\tret\t\t\t# Return from main function"<<endl;
 	if (current!=FEOF) {
 		cerr<<"Unexpected characters at the end of the program: [" << current << "]";			// Unexpected characters at the end of the program

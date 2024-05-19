@@ -25,7 +25,7 @@ alpha   [A-Za-z]
 digit   [0-9]
 number  {digit}+(\.{digit}+)?
 id	{alpha}({alpha}|{digit})*
-keyword (IF|THEN|ELSE|WHILE|DO|FOR|TO|DOWNTO|BEGIN|END|BOOLEAN|INTEGER|DOUBLE|VAR|DISPLAY)
+keyword (IF|THEN|ELSE|WHILE|DO|FOR|TO|DOWNTO|BEGIN|END|BOOLEAN|INTEGER|DOUBLE|VAR|DISPLAY|CASE|OF)
 addop	(\+|\-|\|\|)
 mulop	(\*|\/|%|\&\&)
 relop	(\<|\>|"=="|\<=|\>=|!=)
