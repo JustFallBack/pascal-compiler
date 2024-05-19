@@ -78,9 +78,8 @@ void CheckReadKeyword(const char *keyword) {
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
 // DisplayStatement := "DISPLAY" Expression
 // CaseStatement := "CASE" Expression "OF" CaseListElement {";" CaseListElement} ["ELSE" Statement] "END"
-// CaseListElement := CaseLabel ":" (Statement | EmptyCase)
+// CaseListElement := CaseLabel ":" Statement
 // CaseLabel := CharConst {"," CharConst} | {Digit}+ ".." {Digit}+ | Number {"," Number} | Identifier
-// EmptyCase := 
 
 // Program := [VarDeclarationPart] StatementPart
 // VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."

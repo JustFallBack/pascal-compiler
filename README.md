@@ -56,7 +56,7 @@ Continue to next break point :
 - CHAR
 - DOUBLE
 
-**Note : DISPLAY is not supported when using FOR statements.**
+**Note : DISPLAY is not supported when using FOR statements.**<br>
 **CASE statement is not fully implemented yet.**
 
 ## Grammar
