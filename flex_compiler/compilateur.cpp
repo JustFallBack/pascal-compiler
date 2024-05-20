@@ -723,14 +723,23 @@ enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag) {
 	
 	if (current==CHARCONST) {							// CharConst {"," CharConst}
 		type1 = CharConst();
-		while(current==COMMA) {
-			current=(TOKEN) lexer->yylex();
+		do {
+			cout<<"\tpop \t%rbx"<<endl;
+			cout<<"\tpop \t%rax"<<endl;
+			cout<<"\tcmpq\t%rax, %rbx"<<endl;
+			cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
+			cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+			if (current!=COMMA) {
+				break;
+			}
+			current=(TOKEN) lexer->yylex();				// Consume ',' and advance to next token
 			if(current!=CHARCONST) {
 				Error("character expected.");
 			}
 			type2 = CharConst();
 		}
-		// INCOMPLETE
+		while (true);
+		cout<<"\tjmp \tendCaseElement_"<<caseTag<<"_"<<localTag<<endl;
 		return CHAR;
 	}
 	else if (current==NUMBER) {							// Number {"," Number} | {Digit}+ ".." {Digit}+
@@ -740,6 +749,7 @@ enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag) {
 			Error("INTEGER expected.");
 		}
 		type1 = Number();								// INTEGER or DOUBLE
+		
 		if (type1==INTEGER) {
 			if (current==DOT) {							// {Digit}+ ".." {Digit}+
 				current=(TOKEN) lexer->yylex();
@@ -747,16 +757,19 @@ enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag) {
 					Error("'..' expected.");
 				}
 				current=(TOKEN) lexer->yylex();			// Consume '..' and advance to next token	
-				cout<<"\tpop \t%rbx"<<endl;
-				cout<<"\tpop \t%rax"<<endl;
-				cout<<"\tcmpq\t%rax, %rbx"<<endl;
-				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
-				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
 				try {
 					end_loop = atoi(lexer->YYText());	// Get second digit for loop
 				} catch (invalid_argument e) {
 					Error("INTEGER expected.");
 				}
+				if (end_loop<=loop) {
+					Error("second INTEGER must be stricly greater than the first one.");
+				}
+				cout<<"\tpop \t%rbx"<<endl;
+				cout<<"\tpop \t%rax"<<endl;
+				cout<<"\tcmpq\t%rax, %rbx"<<endl;
+				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
+				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
 				while (loop<end_loop) {					// Loop to get all numbers between loop and end_loop-1
 					cout<<"\tpush\t$"<<++loop<<endl;
 					cout<<"\tpop \t%rbx"<<endl;
@@ -813,6 +826,9 @@ enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag) {
 		if (!IsDeclared(lexer->YYText())) {
 			cerr << "Error : variable '"<<lexer->YYText()<<"' is not declared"<<endl;
 			Error(".");
+		}
+		if (DeclaredVariables[lexer->YYText()]!=CHAR) {
+			Error("CHAR expected.");
 		}
 		return DeclaredVariables[lexer->YYText()];
 	}

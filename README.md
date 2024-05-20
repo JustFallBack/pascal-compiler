@@ -98,3 +98,61 @@ Continue to next break point :
 -  Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 -  Letter := "a"|...|"z"
 -  Type := "INTEGER" | "BOOLEAN" | "DOUBLE" | "CHAR"
+
+## Information on CaseStatement :
+
+Here are a few example of what CaseStatement can handle in this version.<br>
+
+>WARNING
+This version does not handle repetition.<br>
+For example, the following code won't alert that there is the possibilty of e being 1 multiples time.<br>
+It will execute the statement associated to the first occurence (here the first line) and will skip every other statements in the CaseStatement (like if there was a break instruction after each Statement).<br>
+
+```pascal
+VAR e : INTEGER.
+
+CASE e OF
+1       : Statement;
+1,2,3   : Statement;  
+1..5    : Statement  
+END.
+```
+
+**CaseStatement with INTEGER :**
+
+```pascal
+VAR e,a : INTEGER.
+
+a:=86;
+
+CASE e OF
+1       : Statement;  // if e is 1
+2..5    : Statement;  // if e is in the range of 2 to 5
+6,7,12  : Statement;  // if e is either 6,7 or 12
+a       : Statement   // if e is equal to a (here, 86)
+ELSE
+    Statement
+END.
+```
+
+**CaseStatement with CHAR :**
+
+>WARNING
+There must be a whitespace between the `,` (COMMA) and the `'` (single quote).<br>
+It is due to the way *lexer* handles **tokens**.<br>
+
+```pascal
+VAR e : CHAR.
+
+CASE e OF
+'a'         : Statement;
+'b', 'c'    : Statement;
+'d'         : Statement
+ELSE
+    Statement
+END.
+```
+
+**CaseStatement with BOOL :**
+
+**CaseStatement with DOUBLE :**
