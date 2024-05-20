@@ -101,7 +101,7 @@ Continue to next break point :
 
 ## Information on CaseStatement :
 
-Here are a few example of what CaseStatement can handle in this version.<br>
+Here are a few example of what *CaseStatement* can handle in this version.<br>
 
 >WARNING<br>
 
