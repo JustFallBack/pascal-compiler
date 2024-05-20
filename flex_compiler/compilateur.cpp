@@ -718,39 +718,65 @@ void BlockStatement(void) {
 
 // CaseLabel := CharConst {"," CharConst} | {Digit}+ ".." {Digit}+ | Number {"," Number} | Identifier
 enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag) {
-	enum TYPES type1, type2;
+	enum TYPES type1, type2, typeID;
 	unsigned long loop, end_loop;						// Local variable to loop when necessary ({Digit}+ ".." {Digit}+)
 	
-	if (current==CHARCONST) {							// CharConst {"," CharConst}
-		type1 = CharConst();
+	if (current==ID) {
+		if (!IsDeclared(lexer->YYText())) {
+			Error("variable not declared.");
+		}
+		typeID = DeclaredVariables[lexer->YYText()];
+	}
+	if (current==CHARCONST||typeID==CHAR) {				// CharConst {"," CharConst}
+		if (current==CHARCONST) {
+			type1 = CharConst();
+		}
+		else if (DeclaredVariables[lexer->YYText()]!=CHAR) {
+			Error("CHAR expected.");
+		}
+		else {
+			type1 = Identifier();
+		}
 		do {
 			cout<<"\tpop \t%rbx"<<endl;
 			cout<<"\tpop \t%rax"<<endl;
-			cout<<"\tcmpq\t%rax, %rbx"<<endl;
+			cout<<"\tcmpb\t%al, %bl"<<endl;				// Compare 8 bits of %rax and %rbx
 			cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
 			cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
 			if (current!=COMMA) {
 				break;
 			}
 			current=(TOKEN) lexer->yylex();				// Consume ',' and advance to next token
-			if(current!=CHARCONST) {
-				Error("character expected.");
+			if(current==CHARCONST||current==ID) {
+				if (current==CHARCONST) {
+					type2 = CharConst();
+				}
+				else if (DeclaredVariables[lexer->YYText()]!=CHAR) {
+					Error("CHAR expected.");
+				}
+				else {
+					type2 = Identifier();
+				}
 			}
-			type2 = CharConst();
+			else {
+				Error("CHAR expected.");
+			}
 		}
 		while (true);
 		cout<<"\tjmp \tendCaseElement_"<<caseTag<<"_"<<localTag<<endl;
 		return CHAR;
 	}
+
 	else if (current==NUMBER) {							// Number {"," Number} | {Digit}+ ".." {Digit}+
 		try {
-			loop = atoi(lexer->YYText());				// Get first digit for loop
+			loop = atoi(lexer->YYText());				// Get first digit for loop (might not be needed if {Digit}+ ".." {Digit}+ is not used)
 		} catch (invalid_argument e) {
 			Error("INTEGER expected.");
 		}
 		type1 = Number();								// INTEGER or DOUBLE
-		
-		if (type1==INTEGER) {
+
+		if (type1==INTEGER) {							// INTEGER
+
 			if (current==DOT) {							// {Digit}+ ".." {Digit}+
 				current=(TOKEN) lexer->yylex();
 				if (current!=DOT) {
@@ -758,59 +784,55 @@ enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag) {
 				}
 				current=(TOKEN) lexer->yylex();			// Consume '..' and advance to next token	
 				try {
+					cout<<"\tjmp \tIGNORE"<<localTag<<endl;
 					end_loop = atoi(lexer->YYText());	// Get second digit for loop
+					type2 = Number();					// Will push end_loop on the stack but will be skipped
+					if (type2!=INTEGER) {
+						Error("INTEGER expected.");
+					}
+					if (end_loop<=loop) {
+						Error("second INTEGER must be stricly greater than the first one.");
+					}
+					cout<<"IGNORE"<<localTag<<":\t\t\t# the end value for loop (INT..INT in CaseStatement) will not be pushed"<<endl;
 				} catch (invalid_argument e) {
 					Error("INTEGER expected.");
 				}
-				if (end_loop<=loop) {
-					Error("second INTEGER must be stricly greater than the first one.");
-				}
-				cout<<"\tpop \t%rbx"<<endl;
-				cout<<"\tpop \t%rax"<<endl;
-				cout<<"\tcmpq\t%rax, %rbx"<<endl;
-				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
-				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
-				while (loop<end_loop) {					// Loop to get all numbers between loop and end_loop-1
-					cout<<"\tpush\t$"<<++loop<<endl;
+				do {									// Loop to get all numbers between loop and end_loop
 					cout<<"\tpop \t%rbx"<<endl;
 					cout<<"\tpop \t%rax"<<endl;
 					cout<<"\tcmpq\t%rax, %rbx"<<endl;
 					cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
 					cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+					if (loop<end_loop) {
+						cout<<"\tpush\t$"<<++loop<<endl;
+					}
+					else {
+						break;
+					}
 				}
-				type2 = Number();						// Will push end_loop on the stack
-				if (type2!=INTEGER) {					// Should not happen
-					Error("INTEGER expected.");
-				}
-				cout<<"\tpop \t%rbx"<<endl;
-				cout<<"\tpop \t%rax"<<endl;
-				cout<<"\tcmpq\t%rax, %rbx"<<endl;
-				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
-				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
+				while (true);
 				cout<<"\tjmp \tendCaseElement_"<<caseTag<<"_"<<localTag<<endl;
 				return INTEGER;		
 			}
-			else if (current==COLON || current==COMMA) {// {Digit}+ { "," {Digit}+ }
-				cout<<"\tpop \t%rbx"<<endl;
-				cout<<"\tpop \t%rax"<<endl;
-				cout<<"\tcmpq\t%rax, %rbx"<<endl;
-				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
-				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
-				while(current==COMMA) {
-					current=(TOKEN) lexer->yylex();		// Consume ',' and advance to next token
-					if(current!=NUMBER) {
-						Error("number expected.");
-					}
-					type2 = Number();
+			else if (current==COLON||current==COMMA) {  // {Digit}+ { "," {Digit}+ }
+				do {
 					cout<<"\tpop \t%rbx"<<endl;
 					cout<<"\tpop \t%rax"<<endl;
 					cout<<"\tcmpq\t%rax, %rbx"<<endl;
 					cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
 					cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
-					if (type1!=type2) {
-						Error("Same type expected in list element.");
+					if (current!=COMMA) {
+						break;
 					}
-				}
+					current=(TOKEN) lexer->yylex();		// Consume ',' and advance to next token
+					if(current!=NUMBER) {
+						Error("number (INTEGER) expected.");
+					}
+					type2 = Number();
+					if (type2!=INTEGER) {
+						Error("INTEGER expected.");
+					}
+				} while (true);
 				cout<<"\tjmp \tendCaseElement_"<<caseTag<<"_"<<localTag<<endl;
 				return type1;
 			}
