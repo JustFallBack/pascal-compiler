@@ -103,7 +103,7 @@ Continue to next break point :
 
 Here are a few example of what CaseStatement can handle in this version.<br>
 
-><span align="center">WARNING</span><br>
+<span align="center">WARNING</span><br>
 This version does not handle repetition.<br>
 For example, the following code won't alert that there is the possibilty of e being 1 multiples time.<br>
 It will execute the statement associated to the first occurence (here the first line) and will skip every other statements in the CaseStatement (like if there was a break instruction after each Statement).<br>
@@ -137,7 +137,7 @@ END.
 
 **CaseStatement with CHAR :**
 
-><span align="center">WARNING</span><br>
+<span align="center">WARNING</span><br>
 There must be a whitespace between the `,` (COMMA) and the `'` (single quote).<br>
 It is due to the way *lexer* handles **tokens**.<br>
 
