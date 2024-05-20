@@ -132,7 +132,7 @@ CASE e OF
 6,7,12  : Statement;  // if e is either 6,7 or 12
 a       : Statement   // if e is equal to a (here, 86)
 ELSE
-    Statement
+    Statement         // if e isn't equal to any of the specified value
 END.
 ```
 
@@ -144,14 +144,16 @@ There must be a whitespace between the `,` (COMMA) and the `'` (single quote).<b
 It is due to the way *lexer* handles **tokens**.<br>
 
 ```pascal
-VAR e : CHAR.
+VAR e,d : CHAR.
+
+d := '$';
 
 CASE e OF
-'a'         : Statement;
-'b', 'c'    : Statement;
-'d'         : Statement
+'a'         : Statement;  // if e is 'a'
+'b', 'c'    : Statement;  // if e is either 'b' or 'c'
+d, 'd'      : Statement   // if e is either equal to d or is 'd'
 ELSE
-    Statement
+    Statement             // if e isn't equal to any of the specified value
 END.
 ```
 
