@@ -106,8 +106,8 @@ Here are a few example of what CaseStatement can handle in this version.<br>
 >WARNING<br>
 
 This version does not handle repetition.<br>
-For example, the following code won't alert that there is the possibilty of e being 1 multiples time.<br>
-It will execute the statement associated to the first occurence (here the first line) and will skip every other statements in the CaseStatement (like if there was a break instruction after each Statement).<br>
+For example, the following code won't alert that there is the possibilty of `e` being `1` multiples time.<br>
+It will execute the statement associated to the first occurence (here the first line) and will skip every other statements in the *CaseStatement* (like if there was a **break** instruction after each *Statement*).<br>
 
 ```pascal
 VAR e : INTEGER.
