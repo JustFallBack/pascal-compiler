@@ -5,6 +5,7 @@ VAR     a,d : DOUBLE;
 a := 4.0/2.0;
 c := a == 2.0;
 d := 4.2*2.0;
+c := d < a;
 
 DISPLAY d;
 DISPLAY c;
