@@ -157,6 +157,4 @@ ELSE
 END.
 ```
 
-**CaseStatement with BOOL :**
-
 **CaseStatement with DOUBLE :**
