@@ -1,5 +1,9 @@
 VAR     a,b,c,i : INTEGER.
 
+c:=0;
+a:=0;
+b:=0;
+
 a:=3;
 FOR i:=1 TO 3 DO 
     BEGIN 
@@ -10,4 +14,6 @@ FOR i:=1 TO 3 DO
             b:=b*2;
             c:=c+1
         END
-    END.
+    END;
+    
+DISPLAY c.

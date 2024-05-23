@@ -17,7 +17,7 @@ DISPLAY e;
 CASE a OF
 1,2  : a := 100;
 6    : a := 50;
-a    : a := 4
+b    : a := 4
 ELSE
     a := 8
 END;

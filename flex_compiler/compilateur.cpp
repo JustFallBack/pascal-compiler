@@ -667,47 +667,56 @@ void WhileStatement(void) {
 void ForStatement(void) {
 	unsigned long localTag=++TagNumber;
 	enum TYPES type;
-	cout<<"FOR"<<localTag<<":"; 												// Label for FOR
 	CheckReadKeyword("FOR");
+	cout<<"FOR"<<localTag<<":"<<endl; 											// Label for FOR
 
-	string loop_var = AssignementStatement();
+	string loop_var = AssignementStatement();									// Get loop variable
 	if (DeclaredVariables[loop_var]!=INTEGER) {
 		Error("TYPES error: loop variable must be integer.");					// Triggers an error if the loop variable is not integer
 	}
 	if(strcmp(lexer->YYText(),"TO")==0) {										// If keyword is 'TO'
 		CheckReadKeyword("TO");	
 		type=Expression();
+		cout<<"\tpop \t%rdx\t\t# end value"<<endl; 								// Get expression and store it in %rdx				
 		if(type!=INTEGER) {
 			Error("TYPES error: 'TO' expression must be integer.");				// Triggers an error if the expression is not integer in 'TO' statement
 		}
-		cout<<"TO"<<localTag<<":"; 												// Label for TO
-		cout<<"\tmovq\t(%rsp), %rax"<<endl; 									// Necessary to avoid 'too many memory references'
-		cout<<"\tcmpq\t%rax, "<<loop_var<<endl;
+		cout<<"\tpush\t"<<loop_var<<"\t\t# save loop var on the stack"<<endl;
+		cout<<"\tpush\t%rdx\t\t# save end value on the stack"<<endl;
+
+		cout<<"TO"<<localTag<<":"<<endl; 										// Label for TO
+		cout<<"\tcmpq\t%rdx, "<<loop_var<<endl;
 		cout<<"\tjae \tFORend"<<localTag<<"\t\t# jump at the end of FOR"<<endl; // Jump at the end of 'FOR' statement if loop_var is above or equal expression
 
 		CheckReadKeyword("DO");
+		cout<<"DO"<<localTag<<":"<<endl; 								// Label for DO
 		Statement();
 		cout<<"\tincq\t"<<loop_var<<"\t\t# loop_var++"<<endl;
 		cout<<"\tjmp \tTO"<<localTag<<endl;										// Jump to 'TO' statement
-		cout<<"FORend"<<localTag<<":"<<endl; 									// Label for end of 'FOR' statement
 	}
 	else {																		// If keyword is 'DOWNTO'
 		CheckReadKeyword("DOWNTO");
 		type=Expression();
+		cout<<"\tpop \t%rdx\t\t# end value"<<endl; 								// Get expression and store it in %r12						
 		if(type!=INTEGER) {
 			Error("TYPES error: 'DOWNTO' expression must be integer.");			// Triggers an error if the expression is not integer in 'DOWNTO' statement
 		}
-		cout<<"DOWNTO"<<localTag<<":"; 											// Label for DOWNTO
-		cout<<"\tmovq\t(%rsp), %rax"<<endl; 									// Necessary to avoid 'too many memory references'
-		cout<<"\tcmpq\t%rax, "<<loop_var<<endl;
+		cout<<"\tpush\t"<<loop_var<<"\t\t# save loop var on the stack"<<endl;
+		cout<<"\tpush\t%rdx\t\t# save end value on the stack"<<endl;
+
+		cout<<"DOWNTO"<<localTag<<":"<<endl; 									// Label for DOWNTO
+		cout<<"\tcmpq\t%rdx, "<<loop_var<<endl;
 		cout<<"\tjbe \tFORend"<<localTag<<"\t\t# jump at the end of FOR"<<endl; // Jump at the end of 'FOR' statement if loop_var is below or equal expression
 
 		CheckReadKeyword("DO");
+		cout<<"DO"<<localTag<<":"<<endl; 								// Label for DO
 		Statement();
 		cout<<"\tdecq\t"<<loop_var<<"\t\t# loop_var--"<<endl;
-		cout<<"\tjmp \tDOWNTO"<<localTag<<endl;									// Jump to 'DOWNTO' statement
-		cout<<"FORend"<<localTag<<":"<<endl; 									// Label for end of 'FOR' statement
+		cout<<"\tjmp \tDOWNTO"<<localTag<<endl;								// Jump to 'DOWNTO' statement
 	}
+	cout<<"FORend"<<localTag<<":"<<endl; 									// Label for end of 'FOR' statement
+	cout<<"\tpop \t"<<loop_var<<"\t\t# restore loop var"<<endl;
+	cout<<"\tpop \t%rdx\t\t# restore end value"<<endl;
 }
 
 // BlockStatement := "BEGIN" Statement { ";" Statement } "END"
@@ -730,8 +739,8 @@ void BlockStatement(void) {
 enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag, enum TYPES typeExpression) {
 	enum TYPES type;
 	do {
-		type = Factor();								// Get factor and its type
-		if (type!=typeExpression) {						// Triggers an error if the types are different
+		type = Factor();									// Get factor and its type
+		if (type!=typeExpression) {							// Triggers an error if the types are different
 			Error("TYPES error: cannot compare different types.");
 		}
 		switch (type) {

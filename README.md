@@ -1,7 +1,7 @@
 # Pascal compiler
 
-A simple Pascal compiler.
-From : Pascal-like imperative LL(k) langage
+A simple Pascal compiler.<br>
+From : Pascal-like imperative LL(k) langage<br>
 To : 64 bit 80x86 assembly langage (AT&T)
 
 **Download the repository :**
@@ -28,7 +28,7 @@ will compile the program using `testAll.p` file.
 -  DisplayStatement := "DISPLAY" Expression
 -  CaseStatement := "CASE" Expression "OF" CaseListElement {";" CaseListElement} ["ELSE" Statement] "END"
 -  CaseListElement := CaseLabel ":" Statement
--  CaseLabel := CharConst {"," CharConst} | {Digit}+ ".." {Digit}+ | Number {"," Number} | Identifier
+-  CaseLabel := Factor { "," Factor }
 
 <br>
 
@@ -65,8 +65,8 @@ will compile the program using `testAll.p` file.
 - CHAR
 - DOUBLE
 
-**Note : DISPLAY is not supported when using FOR statements.**<br>
-**CASE statement is not fully implemented yet.**
+**Negative `INTEGER` and `DOUBLE` are not supported.**<br>
+**It is not possible to directly assign a `BOOLEAN` value to a `BOOLEAN`**
 
 ## Debug the executable with ddd :
 
@@ -126,11 +126,27 @@ a:=86;
 
 CASE e OF
 1       : Statement;  // if e is 1
-// 2..5    : Statement;  // if e is in the range of 2 to 5 (temporarily doesnt work)
 6,7,12  : Statement;  // if e is either 6,7 or 12
-a       : Statement   // if e is equal to a (here, 86)
+a,999   : Statement   // if e is either equal to a (here, 86) or 999
 ELSE
     Statement         // if e is not equal to any of the specified value
+END.
+```
+
+**CaseStatement with DOUBLE :**
+
+```pascal
+VAR     a,d : DOUBLE;
+
+a := 15.0/2.0;
+d := 4.2*2.0;
+
+CASE a OF
+1.0      : Statement;  // if a is 1.0
+2.0,7.54 : Statement;  // if a is either 2.0 or 7.54
+d, 8.0   : Statement   // if a is either equal to d or 8.0
+ELSE
+    Statement          // if a is not equal to any of the specified value
 END.
 ```
 
@@ -152,22 +168,5 @@ CASE e OF
 d, 'd'      : Statement   // if e is either equal to d or is 'd'
 ELSE
     Statement             // if e is not equal to any of the specified value
-END.
-```
-
-**CaseStatement with DOUBLE :**
-
-```pascal
-VAR     a,d : DOUBLE;
-
-a := 15.0/2.0;
-d := 4.2*2.0;
-
-CASE a OF
-1.0      : Statement;  // if a is 1.0
-2.0,7.54 : Statement;  // if a is either 2.0 or 7.54
-d, 8.0   : Statement   // if a is either equal to d or 8.0
-ELSE
-    Statement          // if a is not equal to any of the specified value
 END.
 ```
