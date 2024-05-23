@@ -4,9 +4,11 @@ A simple Pascal compiler.<br>
 From : Pascal-like imperative LL(k) langage<br>
 To : 64 bit 80x86 assembly langage (AT&T)
 
-**Download the repository :**
+This project has been done for academical purposes.<br>
+This compiler is very simple, some pascal features are not handled<br>
+The set of instructions used for the assembly code work with 64 bit 80x86 assembly langage.
 
-> git clone git@github.com:JustFallBack/Compilateur.git
+This project was developped on standard Ubuntu distribution.
 
 ## Build the compiler :
 You can test different files that are in `pascal_test` folder.<br>
@@ -16,10 +18,15 @@ For exemple :
 
 will compile the program using `testAll.p` file.
 
-**You can have a look at the produced assembly code in ** `test.s`**.**
+**You can have a look at the produced assembly code in `test.s`.**
+
+**Download the repository :**
+
+> git clone git@github.com:JustFallBack/Compilateur.git
 
 ## Grammar
 
+```md
 -  Statement := AssignementStatement | IfStatement | WhileStatement | ForStatement | BlockStatement | DisplayStatement | CaseStatement
 -  IfStatement := "IF" Expression "THEN" Statement [ "ELSE" Statement ]
 -  WhileStatement := "WHILE" Expression "DO" Statement
@@ -29,18 +36,18 @@ will compile the program using `testAll.p` file.
 -  CaseStatement := "CASE" Expression "OF" CaseListElement {";" CaseListElement} ["ELSE" Statement] "END"
 -  CaseListElement := CaseLabel ":" Statement
 -  CaseLabel := Factor { "," Factor }
-
+```
 <br>
-
+```md
 -  Program := [VarDeclarationPart] StatementPart
 -  VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."
 -  VarDeclaration := Identifer {"," Identifier} ":" Type
 -  StatementPart := Statement {";" Statement} "."
 -  Statement := AssignementStatement
 -  AssignementStatement := Letter "=" Expression
-
+```
 <br>
-
+```md
 -  Expression := SimpleExpression [RelationalOperator SimpleExpression]
 -  SimpleExpression := Term {AdditiveOperator Term}
 -  Term := Factor {MultiplicativeOperator Factor}
@@ -48,16 +55,16 @@ will compile the program using `testAll.p` file.
 -  Identifier := Letter{Letter|Digit}
 -  Number := {digit}+(\.{digit}+)?
 -  CharConst := "'" Letter "'"
-
+```
 <br>
-
+```md
 -  AdditiveOperator := "+" | "-" | "||"
 -  MultiplicativeOperator := "*" | "/" | "%" | "&&"
 -  RelationalOperator := "==" | "!=" | "<" | ">" | "<=" | ">="  
 -  Digit := "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 -  Letter := "a"|...|"z"
 -  Type := "INTEGER" | "BOOLEAN" | "DOUBLE" | "CHAR"
-
+```
 ## Type handled
 
 - INTEGER
@@ -66,7 +73,7 @@ will compile the program using `testAll.p` file.
 - DOUBLE
 
 **Negative `INTEGER` and `DOUBLE` are not supported.**<br>
-**It is not possible to directly assign a `BOOLEAN` value to a `BOOLEAN`**
+**It is not possible to directly assign a `BOOLEAN` value to a `BOOLEAN`.**
 
 ## Debug the executable with ddd :
 
