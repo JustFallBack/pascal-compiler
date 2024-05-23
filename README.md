@@ -38,6 +38,7 @@ will compile the program using `testAll.p` file.
 -  CaseLabel := Factor { "," Factor }
 ```
 <br>
+
 ```md
 -  Program := [VarDeclarationPart] StatementPart
 -  VarDeclarationPart := "VAR" VarDeclaration {";" VarDeclaration} "."
@@ -46,7 +47,9 @@ will compile the program using `testAll.p` file.
 -  Statement := AssignementStatement
 -  AssignementStatement := Letter "=" Expression
 ```
+
 <br>
+
 ```md
 -  Expression := SimpleExpression [RelationalOperator SimpleExpression]
 -  SimpleExpression := Term {AdditiveOperator Term}
@@ -56,7 +59,9 @@ will compile the program using `testAll.p` file.
 -  Number := {digit}+(\.{digit}+)?
 -  CharConst := "'" Letter "'"
 ```
+
 <br>
+
 ```md
 -  AdditiveOperator := "+" | "-" | "||"
 -  MultiplicativeOperator := "*" | "/" | "%" | "&&"
@@ -65,6 +70,7 @@ will compile the program using `testAll.p` file.
 -  Letter := "a"|...|"z"
 -  Type := "INTEGER" | "BOOLEAN" | "DOUBLE" | "CHAR"
 ```
+
 ## Type handled
 
 - INTEGER
