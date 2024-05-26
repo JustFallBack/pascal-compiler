@@ -17,4 +17,5 @@ ELSE
 IF a==3 THEN
     b:=b+1;
 
-DISPLAY b.
+DISPLAY b;
+DISPLAY c.

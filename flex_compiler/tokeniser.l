@@ -20,6 +20,7 @@ using namespace std;
 %option yylineno
 
 charconst  \'\\?.\'
+boolconst (TRUE|FALSE)
 ws      [ \t\n\r]+
 alpha   [A-Za-z]
 digit   [0-9]
@@ -33,25 +34,25 @@ unknown [^\"A-Za-z0-9 \n\r\t\(\)\<\>\=\!\%\&\|\}\-\;\.]+
 
 %%
 
-{addop}		return ADDOP;
-{mulop}		return MULOP;
-{relop}		return RELOP;
-{number}	return NUMBER;
-{keyword}	return KEYWORD;
-{id}		return ID;
-{charconst}	return CHARCONST;
-"["		return RBRACKET;
-"]"		return LBRACKET;
-","		return COMMA;
-";"		return SEMICOLON;
-":"		return COLON;
-"."		return DOT;
-":="		return ASSIGN;
-"("		return RPARENT;
-")"		return LPARENT;
-"!"		return NOT;
-<<EOF>>		return FEOF;
-{ws}    {/* skip blanks and tabs */};
+{keyword}	{ return KEYWORD; }
+{boolconst} { return BOOLCONST; }
+{id}		{ return ID; }
+{number}	{ return NUMBER; }
+{charconst} { return CHARCONST; }
+{addop}		{ return ADDOP; }
+{mulop}		{ return MULOP; }
+{relop}		{ return RELOP; }
+"["		{ return LBRACKET; }
+"]"		{ return RBRACKET; }
+","		{ return COMMA; }
+";"		{ return SEMICOLON; }
+":"		{ return COLON; }
+"."		{ return DOT; }
+":="	{ return ASSIGN; }
+"("		{ return LPARENT; }
+")"		{ return RPARENT; }
+"!"		{ return NOT; }
+{ws}    { /* skip blanks and tabs */ }
 "(*"    { /* Skip comments between '(*' and '*)' */
 		int c;
 		while((c = yyinput()) != 0){
@@ -62,9 +63,8 @@ unknown [^\"A-Za-z0-9 \n\r\t\(\)\<\>\=\!\%\&\|\}\-\;\.]+
   	          			unput(c);
   	   		}	
 		}
-	};
-
-{unknown}	return UNKNOWN;
+	}
+<<EOF>>	{ return FEOF; }
+{unknown}	{ return UNKNOWN; }
 
 %%
-

@@ -11,12 +11,12 @@ BEGIN
   d := 0;
   x := 0.0;
   y := 1.5;
-  flag := a<0;
+  flag := TRUE;
   ch := 'A';
 
   FOR j := 1 TO 10 DO
   BEGIN
-    IF j%2 == 0 THEN
+    IF j % 2 == 0 THEN
     BEGIN
       FOR k := 1 TO j DO
       BEGIN
@@ -26,7 +26,7 @@ BEGIN
         BEGIN
           b := b + 2;
           c := c + 1;
-          x := x + y;
+          x := x + y;  
           IF ch == 'A' THEN
             ch := 'B'
           ELSE
@@ -42,13 +42,14 @@ BEGIN
         IF flag THEN
         BEGIN
           b := b + 1;
-          flag := a > 1000
+          flag := FALSE
         END
         ELSE
         BEGIN
           b := b + 2;
           c := c + 1;
-          y := y * 1.1
+          y := y * 1.1;
+          flag := TRUE
         END;
         i := i - 1
       END
@@ -57,13 +58,15 @@ BEGIN
     BEGIN
       IF i % 2 == 1 THEN
       BEGIN
+        flag := TRUE;
         IF flag THEN
           d := d + i
         ELSE
           d := d - i
       END;
-      FOR d := 30 DOWNTO 24 DO
+      FOR a := 1 TO 3 DO
       BEGIN
+        ch := 'A';
         IF ch == 'A' THEN
           b := b + 1
         ELSE IF ch == 'B' THEN

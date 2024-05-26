@@ -54,10 +54,11 @@ will compile the program using `testAll.p` file.
 -  Expression := SimpleExpression [RelationalOperator SimpleExpression]
 -  SimpleExpression := Term {AdditiveOperator Term}
 -  Term := Factor {MultiplicativeOperator Factor}
--  Factor := "(" Expression ")" | Number | Identifier | CharConst
+-  Factor := "(" Expression ")" | Number | Identifier | CharConst | BoolConst
 -  Identifier := Letter{Letter|Digit}
 -  Number := {digit}+(\.{digit}+)?
 -  CharConst := "'" Letter "'"
+-  BoolConst := "TRUE" | "FALSE"
 ```
 
 <br>
@@ -75,11 +76,10 @@ will compile the program using `testAll.p` file.
 
 - INTEGER
 - BOOLEAN
-- CHAR
 - DOUBLE
+- CHAR
 
 **Negative `INTEGER` and `DOUBLE` are not supported.**<br>
-**It is not possible to directly assign a `BOOLEAN` value to a `BOOLEAN`.**
 
 ## Debug the executable with ddd :
 
@@ -145,6 +145,28 @@ ELSE
     Statement         // if e is not equal to any of the specified value
 END.
 ```
+**CaseStatement with BOOLEAN :**
+
+```pascal
+VAR flag : BOOLEAN;
+    a    : INTEGER.
+
+flag:=TRUE;
+a:=8;
+
+CASE flag OF
+TRUE   : Statement; // if flag is TRUE
+FALSE  : Statement  // if flag is FALSE
+END
+
+// previous CASE is equivalent to ;
+CASE flag OF
+TRUE   : Statement  // if flag is TRUE
+ELSE
+    Statement       // if flag is not TRUE
+END
+```
+**NOTE** : it is possible to put a **comma** between *boolean values* (`TRUE` or `FALSE`).
 
 **CaseStatement with DOUBLE :**
 

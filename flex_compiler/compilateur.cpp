@@ -95,6 +95,7 @@ void CheckReadKeyword(const char *keyword) {
 // Identifier := Letter{Letter|Digit}
 // Number := {digit}+(\.{digit}+)?
 // CharConst := "'" Letter "'"
+// BoolConst := "TRUE" | "FALSE"
 
 // AdditiveOperator := "+" | "-" | "||"
 // MultiplicativeOperator := "*" | "/" | "%" | "&&"
@@ -149,16 +150,28 @@ enum TYPES CharConst(void){
 	return CHAR;
 }
 
+// BoolConst := "TRUE" | "FALSE"
+enum TYPES BoolConst(void) {
+	if (strcmp(lexer->YYText(),"FALSE")==0) {
+		cout<<"\tpush\t$0"<<endl;
+	}
+	else {
+		cout<<"\tpush\t$0xFFFFFFFFFFFFFFFF"<<endl;
+	}
+	current=(TOKEN) lexer->yylex();			// Advance to next token
+	return BOOLEAN;
+}
+
 enum TYPES Expression(void);				// Called by Term() and calls Term()
 
-// Factor := "(" Expression ")" | Number | Identifier | CharConst
+// Factor := "(" Expression ")" | Number | Identifier | CharConst | Boolconst
 enum TYPES Factor(void){
 	TYPES type;
 	switch(current) {							
-	case RPARENT:							// If token is '(', call Expression() and check if next token is ')'
+	case LPARENT:							// If token is '(', call Expression() and check if next token is ')'
 		current=(TOKEN) lexer->yylex();		// Consume '(' and advance to next token
 		type = Expression();				// Get expression and its type
-		if (current!=LPARENT) {							
+		if (current!=RPARENT) {							
 			Error("')' expected.");			// Triggers an error if token is not ')'
 		}
 		else {
@@ -174,8 +187,11 @@ enum TYPES Factor(void){
 	case CHARCONST: 						// If token is a character, call CharConst()
 		type = CharConst();
 		break;
+	case BOOLCONST:
+		type = BoolConst();
+		break;
 	default:								// Triggers an error if token is not '(', number, identifier or character
-		Error("'(' or number or letter or char expected.");
+		Error("'(' or number or identifier or char or bool expected.");
 	}
 	return type;
 }
@@ -689,7 +705,7 @@ void ForStatement(void) {
 		cout<<"\tjae \tFORend"<<localTag<<"\t\t# jump at the end of FOR"<<endl; // Jump at the end of 'FOR' statement if loop_var is above or equal expression
 
 		CheckReadKeyword("DO");
-		cout<<"DO"<<localTag<<":"<<endl; 								// Label for DO
+		cout<<"DO"<<localTag<<":"<<endl; 										// Label for DO
 		Statement();
 		cout<<"\tincq\t"<<loop_var<<"\t\t# loop_var++"<<endl;
 		cout<<"\tjmp \tTO"<<localTag<<endl;										// Jump to 'TO' statement
@@ -749,15 +765,13 @@ enum TYPES CaseLabel(unsigned long localTag, unsigned long caseTag, enum TYPES t
 			However, it is only possible because we test strict equality, and not a range of values.
 			*/
 			case INTEGER:
+			case BOOLEAN:
 			case DOUBLE:
 				cout<<"\tpop \t%rbx"<<endl;
 				cout<<"\tpop \t%rax"<<endl;
 				cout<<"\tcmpq\t%rax, %rbx"<<endl;
 				cout<<"\tje  \tCaseStatement"<<"_"<<caseTag<<"_"<<localTag<<endl;
 				cout<<"\tpush\t%rax\t\t # push 'CASE' Expression on the stack"<<endl;
-				break;
-			case BOOLEAN:									// Should not happen
-				Error("TYPES error: cannot compare BOOLEAN in CaseLabel."); 
 				break;
 			case CHAR:
 				cout<<"\tpop \t%rbx"<<endl;
@@ -804,7 +818,7 @@ void CaseStatement(void) {
 	cout<<"CASE"<<localTag<<":"<<endl; 										// Label for CASE
 
 	type1 = Expression();
-	if (type1!=INTEGER && type1!=CHAR && type1!=DOUBLE) {
+	if (type1!=INTEGER && type1!=CHAR && type1!=DOUBLE && type1!=BOOLEAN) {
 		Error("TYPES error: 'CASE' expression must be INTEGER or DOUBLE or CHAR.");
 	}
 
