@@ -2,7 +2,7 @@ flex_compiler/tokeniser.o
 flex_compiler/tokeniser.cpp
 flex_compiler/test.s
 flex_compiler/test
-flex_compiler/compilateur
+flex_compiler/compiler
 flex_compiler/prog.s
 flex_compiler/prog
 flex_compiler/README.md
