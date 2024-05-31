@@ -8,7 +8,7 @@ This project has been done for academical purposes.<br>
 This compiler is very simple, some pascal features are not handled<br>
 The set of instructions used for the assembly code work with 64 bit 80x86 assembly langage.
 
-This project was developped on standard Ubuntu distribution.
+This project was developped on `Ubuntu 22.04`.
 
 ## Build the compiler :
 You can test different files that are in `pascal_test` folder.<br>
@@ -17,6 +17,13 @@ For exemple :
 > make VERSION=All
 
 will compile the program using `testAll.p` file.
+
+For additional help, type the following command :<br>
+> make <br>
+> make help
+
+Finally, you can execute the programm : <br>
+> ./test
 
 **You can have a look at the produced assembly code in `test.s`.**
 
