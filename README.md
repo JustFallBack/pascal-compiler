@@ -29,7 +29,7 @@ Finally, you can execute the programm : <br>
 
 **Download the repository :**
 
-> git clone git@github.com:JustFallBack/Compilateur.git
+> git clone git@github.com:JustFallBack/pascal-compiler.git
 
 ## Grammar
 
