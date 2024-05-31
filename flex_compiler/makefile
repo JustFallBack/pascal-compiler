@@ -17,6 +17,8 @@ clean: ## clean all compiled files
 		echo "Version :$(VERSION)"
 		rm *.o *.s
 		rm tokeniser.cpp
+		rm test
+		rm compiler
 tokeniser.cpp:	tokeniser.l ## generate the tokeniser.cpp file
 		flex++ -d -otokeniser.cpp tokeniser.l
 tokeniser.o:	tokeniser.cpp ## compile the tokeniser.cpp file
