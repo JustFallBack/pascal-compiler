@@ -21,13 +21,13 @@ tokeniser.cpp:	tokeniser.l ## generate the tokeniser.cpp file
 		flex++ -d -otokeniser.cpp tokeniser.l
 tokeniser.o:	tokeniser.cpp ## compile the tokeniser.cpp file
 		g++ -c tokeniser.cpp
-compilateur:	compilateur.cpp tokeniser.o ## compile the compilateur.cpp file
-		g++ -ggdb -o compilateur compilateur.cpp tokeniser.o
-test$(VERSION): compilateur pascal_test/test$(VERSION).p ## compile the test file
-		./compilateur < pascal_test/test$(VERSION).p > test.s
+compiler:	compiler.cpp tokeniser.o ## compile the compiler.cpp file
+		g++ -ggdb -o compiler compiler.cpp tokeniser.o
+test$(VERSION): compiler pascal_test/test$(VERSION).p ## compile the test file
+		./compiler < pascal_test/test$(VERSION).p > test.s
 		gcc -ggdb -no-pie -fno-pie test.s -o test
-prog:		compilateur prog.p ## compile the prog file
-		./compilateur <prog.p >prog.s
+prog:		compiler prog.p ## compile the prog file
+		./compiler <prog.p >prog.s
 		gcc -ggdb -no-pie -fno-pie prog.s -o prog
 
 

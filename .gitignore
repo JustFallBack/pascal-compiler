@@ -5,5 +5,5 @@ flex_compiler/test
 flex_compiler/compilateur
 flex_compiler/prog.s
 flex_compiler/prog
-cpp_compilator/
+flex_compiler/README.md
 .vscode
