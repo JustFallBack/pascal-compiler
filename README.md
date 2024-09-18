@@ -22,7 +22,7 @@ For additional help, type the following command :<br>
 > make <br>
 > make help
 
-Finally, you can execute the programm : <br>
+Finally, you can execute the program : <br>
 > ./test
 
 **You can have a look at the produced assembly code in `test.s`.**
