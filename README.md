@@ -1,4 +1,4 @@
-# Pascal compiler
+# Pascal Compiler - Bachelor's degree project
 
 A simple Pascal compiler.<br>
 From : Pascal-like imperative LL(k) langage<br>
